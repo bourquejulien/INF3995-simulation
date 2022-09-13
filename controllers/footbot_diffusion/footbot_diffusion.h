@@ -29,11 +29,25 @@
 /* Definition of the foot-bot proximity sensor */
 #include <argos3/plugins/robots/foot-bot/control_interface/ci_footbot_proximity_sensor.h>
 
+#include <queue>
+#include <mutex>
+#include <boost/asio.hpp>
+
+using boost::asio::ip::tcp;
+
 /*
  * All the ARGoS stuff in the 'argos' namespace.
  * With this statement, you save typing argos:: every time.
  */
 using namespace argos;
+
+enum class Action {Init, Takeoff};
+
+struct Message
+{
+   Action action;
+   std::string value;
+};
 
 /*
  * A controller is simply an implementation of the CCI_Controller class.
@@ -55,11 +69,17 @@ public:
     */
    virtual void Init(TConfigurationNode& t_node);
 
+   virtual void TcpSession(tcp::socket sock);
+
    /*
     * This function is called once every time step.
     * The length of the time step is set in the XML file.
     */
    virtual void ControlStep();
+
+   virtual void Destroy();
+
+   virtual void ProcessCommands();
 
    /*
     * This function resets the controller to its state right after the
@@ -69,7 +89,7 @@ public:
     * so the function could have been omitted. It's here just for
     * completeness.
     */
-   virtual void Reset() {}
+   virtual void Reset();
 
    /*
     * Called to cleanup what done by Init() when the experiment finishes.
@@ -77,7 +97,6 @@ public:
     * so the function could have been omitted. It's here just for
     * completeness.
     */
-   virtual void Destroy() {}
 
 private:
 
@@ -85,6 +104,14 @@ private:
    CCI_DifferentialSteeringActuator* m_pcWheels;
    /* Pointer to the foot-bot proximity sensor */
    CCI_FootBotProximitySensor* m_pcProximity;
+
+   boost::asio::io_context* m_io_context;
+   tcp::acceptor* m_acceptor;
+
+   std::queue<Message> m_command_history;
+   std::mutex m_history_mutex;
+
+   bool m_is_init;
 
    /*
     * The following variables are used as parameters for the

@@ -8,12 +8,15 @@
 /****************************************/
 /****************************************/
 
+const int max_length = 1024;
+
 CFootBotDiffusion::CFootBotDiffusion() :
    m_pcWheels(NULL),
    m_pcProximity(NULL),
    m_cAlpha(10.0f),
    m_fDelta(0.5f),
    m_fWheelVelocity(2.5f),
+   m_is_init(false),
    m_cGoStraightAngleRange(-ToRadians(m_cAlpha),
                            ToRadians(m_cAlpha)) {}
 
@@ -21,6 +24,11 @@ CFootBotDiffusion::CFootBotDiffusion() :
 /****************************************/
 
 void CFootBotDiffusion::Init(TConfigurationNode& t_node) {
+   m_io_context = new boost::asio::io_context();
+   m_acceptor = new tcp::acceptor(*m_io_context, tcp::endpoint(tcp::v4(), 9854));
+
+   m_acceptor -> non_blocking(true);
+   
    /*
     * Get sensor/actuator handles
     *
@@ -62,6 +70,17 @@ void CFootBotDiffusion::Init(TConfigurationNode& t_node) {
 /****************************************/
 
 void CFootBotDiffusion::ControlStep() {
+   boost::system::error_code error;
+   tcp::socket socket = m_acceptor->accept(error);
+
+   if (!error)
+   {
+      std::thread(&CFootBotDiffusion::TcpSession, this, std::move(socket)).detach();
+   }
+
+
+   this->ProcessCommands();
+   
    /* Get readings from proximity sensor */
    const CCI_FootBotProximitySensor::TReadings& tProxReads = m_pcProximity->GetReadings();
    /* Sum them together */
@@ -74,6 +93,12 @@ void CFootBotDiffusion::ControlStep() {
     * is far enough, continue going straight, otherwise curve a little
     */
    CRadians cAngle = cAccumulator.Angle();
+
+   if (!m_is_init)
+   {
+      return;
+   }
+
    if(m_cGoStraightAngleRange.WithinMinBoundIncludedMaxBoundIncluded(cAngle) &&
       cAccumulator.Length() < m_fDelta ) {
       /* Go straight */
@@ -88,6 +113,92 @@ void CFootBotDiffusion::ControlStep() {
          m_pcWheels->SetLinearVelocity(0.0f, m_fWheelVelocity);
       }
    }
+   
+}
+
+void CFootBotDiffusion::TcpSession(tcp::socket sock)
+{
+   boost::system::error_code error;
+  try
+  {
+    while(!error)
+    {
+      char data[max_length];
+
+      if (error == boost::asio::error::eof)
+        break;
+      else if (error)
+        throw boost::system::system_error(error);
+
+      size_t length = sock.read_some(boost::asio::buffer(data), error);
+
+      char code = data[0];
+      
+      std::string response = "Succeded from Argos";
+
+      Message message;
+
+      switch (code)
+      {
+      case 'i':
+         message = {Action::Init, ""};
+         break;
+      
+      case 't':
+         message = {Action::Takeoff, ""};
+         break;
+      
+      default:
+         response = "Failed from Argos";
+         break;
+      }
+
+      m_history_mutex.lock();
+      m_command_history.push(message);
+      m_history_mutex.unlock();
+
+      boost::asio::write(sock, boost::asio::buffer(response));
+    }
+  }
+  catch (std::exception& e)
+  {
+    std::cerr << "Exception in thread: " << e.what() << "\n";
+  }
+}
+
+void CFootBotDiffusion::ProcessCommands()
+{
+   Message command;
+
+   m_history_mutex.lock();
+
+   if(m_command_history.empty())
+   {
+      m_history_mutex.unlock();
+      return;
+   }
+
+   command = m_command_history.front();
+   m_command_history.pop();
+   m_history_mutex.unlock();
+
+   if(command.action == Action::Init)
+   {
+      this->m_is_init = true;
+   }
+}
+
+void CFootBotDiffusion::Reset()
+{
+   m_is_init = false;
+}
+
+void CFootBotDiffusion::Destroy()
+{
+   delete m_io_context;
+   m_io_context = nullptr;
+   delete m_acceptor;
+   m_acceptor = nullptr;
 }
 
 /****************************************/
