@@ -10,7 +10,7 @@
 
 const int max_length = 1024;
 
-CMainSim::CMainSim() :
+CMainSimulation::CMainSimulation() :
    m_pcWheels(NULL),
    m_pcProximity(NULL),
    m_cAlpha(10.0f),
@@ -23,7 +23,7 @@ CMainSim::CMainSim() :
 /****************************************/
 /****************************************/
 
-void CMainSim::Init(TConfigurationNode& t_node) {
+void CMainSimulation::Init(TConfigurationNode& t_node) {
    m_io_context = new boost::asio::io_context();
    m_acceptor = new tcp::acceptor(*m_io_context, tcp::endpoint(tcp::v4(), 9854));
 
@@ -69,13 +69,13 @@ void CMainSim::Init(TConfigurationNode& t_node) {
 /****************************************/
 /****************************************/
 
-void CMainSim::ControlStep() {
+void CMainSimulation::ControlStep() {
    boost::system::error_code error;
    tcp::socket socket = m_acceptor->accept(error);
 
    if (!error)
    {
-      std::thread(&CMainSim::TcpSession, this, std::move(socket)).detach();
+      std::thread(&CMainSimulation::TcpSession, this, std::move(socket)).detach();
    }
 
 
@@ -116,7 +116,7 @@ void CMainSim::ControlStep() {
    
 }
 
-void CMainSim::TcpSession(tcp::socket sock)
+void CMainSimulation::TcpSession(tcp::socket sock)
 {
    boost::system::error_code error;
   try
@@ -166,7 +166,7 @@ void CMainSim::TcpSession(tcp::socket sock)
   }
 }
 
-void CMainSim::ProcessCommands()
+void CMainSimulation::ProcessCommands()
 {
    Message command;
 
@@ -188,12 +188,12 @@ void CMainSim::ProcessCommands()
    }
 }
 
-void CMainSim::Reset()
+void CMainSimulation::Reset()
 {
    m_is_init = false;
 }
 
-void CMainSim::Destroy()
+void CMainSimulation::Destroy()
 {
    delete m_io_context;
    m_io_context = nullptr;
@@ -214,4 +214,4 @@ void CMainSim::Destroy()
  * controller class to instantiate.
  * See also the configuration files for an example of how this is used.
  */
-REGISTER_CONTROLLER(CMainSim, "main_sim_controller")
+REGISTER_CONTROLLER(CMainSimulation, "main_simulation_controller")

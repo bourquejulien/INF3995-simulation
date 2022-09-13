@@ -49,8 +49,8 @@
         - library: the path to the compiled library containing you
           controller.
     -->
-    <footbot_diffusion_controller id="fdc"
-                                  library="build/controllers/footbot_diffusion/libfootbot_diffusion">
+    <main_simulation_controller id="msc"
+                                  library="build/controllers/main_simulation/libmain_simulation">
       <!--
           The <actuators> section contains a list of the actuators used by
           this controller.
@@ -93,7 +93,7 @@
           controllers/footbot_diffusion/footbot_diffusion.h.
       -->
       <params alpha="7.5" delta="0.1" velocity="5" />
-    </footbot_diffusion_controller>
+    </main_simulation_controller>
 
   </controllers>
 
@@ -134,7 +134,7 @@
     <!-- Place a foot-bot in the origin and bind it to the controller -->
     <foot-bot id="fb_0">
       <body position="0,0,0" orientation="0,0,0" />
-      <controller config="fdc"/>
+      <controller config="msc"/>
     </foot-bot>
 
   </arena>

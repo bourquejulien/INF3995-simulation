@@ -52,15 +52,15 @@ struct Message
 /*
  * A controller is simply an implementation of the CCI_Controller class.
  */
-class CMainSim : public CCI_Controller {
+class CMainSimulation : public CCI_Controller {
 
 public:
 
    /* Class constructor. */
-   CMainSim();
+   CMainSimulation();
 
    /* Class destructor. */
-   virtual ~CMainSim() {}
+   virtual ~CMainSimulation() {}
 
    /*
     * This function initializes the controller.
