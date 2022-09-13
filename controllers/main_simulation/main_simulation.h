@@ -16,8 +16,8 @@
  *    experiments/diffusion_10.argos
  */
 
-#ifndef FOOTBOT_DIFFUSION_H
-#define FOOTBOT_DIFFUSION_H
+#ifndef MAIN_SIMULATION_H
+#define MAIN_SIMULATION_H
 
 /*
  * Include some necessary headers.
@@ -52,15 +52,15 @@ struct Message
 /*
  * A controller is simply an implementation of the CCI_Controller class.
  */
-class CFootBotDiffusion : public CCI_Controller {
+class CMainSim : public CCI_Controller {
 
 public:
 
    /* Class constructor. */
-   CFootBotDiffusion();
+   CMainSim();
 
    /* Class destructor. */
-   virtual ~CFootBotDiffusion() {}
+   virtual ~CMainSim() {}
 
    /*
     * This function initializes the controller.

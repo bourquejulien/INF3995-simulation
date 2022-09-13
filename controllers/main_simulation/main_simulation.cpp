@@ -1,5 +1,5 @@
 /* Include the controller definition */
-#include "footbot_diffusion.h"
+#include "main_simulation.h"
 /* Function definitions for XML parsing */
 #include <argos3/core/utility/configuration/argos_configuration.h>
 /* 2D vector definition */
@@ -10,7 +10,7 @@
 
 const int max_length = 1024;
 
-CFootBotDiffusion::CFootBotDiffusion() :
+CMainSim::CMainSim() :
    m_pcWheels(NULL),
    m_pcProximity(NULL),
    m_cAlpha(10.0f),
@@ -23,7 +23,7 @@ CFootBotDiffusion::CFootBotDiffusion() :
 /****************************************/
 /****************************************/
 
-void CFootBotDiffusion::Init(TConfigurationNode& t_node) {
+void CMainSim::Init(TConfigurationNode& t_node) {
    m_io_context = new boost::asio::io_context();
    m_acceptor = new tcp::acceptor(*m_io_context, tcp::endpoint(tcp::v4(), 9854));
 
@@ -69,13 +69,13 @@ void CFootBotDiffusion::Init(TConfigurationNode& t_node) {
 /****************************************/
 /****************************************/
 
-void CFootBotDiffusion::ControlStep() {
+void CMainSim::ControlStep() {
    boost::system::error_code error;
    tcp::socket socket = m_acceptor->accept(error);
 
    if (!error)
    {
-      std::thread(&CFootBotDiffusion::TcpSession, this, std::move(socket)).detach();
+      std::thread(&CMainSim::TcpSession, this, std::move(socket)).detach();
    }
 
 
@@ -116,7 +116,7 @@ void CFootBotDiffusion::ControlStep() {
    
 }
 
-void CFootBotDiffusion::TcpSession(tcp::socket sock)
+void CMainSim::TcpSession(tcp::socket sock)
 {
    boost::system::error_code error;
   try
@@ -166,7 +166,7 @@ void CFootBotDiffusion::TcpSession(tcp::socket sock)
   }
 }
 
-void CFootBotDiffusion::ProcessCommands()
+void CMainSim::ProcessCommands()
 {
    Message command;
 
@@ -188,12 +188,12 @@ void CFootBotDiffusion::ProcessCommands()
    }
 }
 
-void CFootBotDiffusion::Reset()
+void CMainSim::Reset()
 {
    m_is_init = false;
 }
 
-void CFootBotDiffusion::Destroy()
+void CMainSim::Destroy()
 {
    delete m_io_context;
    m_io_context = nullptr;
@@ -214,4 +214,4 @@ void CFootBotDiffusion::Destroy()
  * controller class to instantiate.
  * See also the configuration files for an example of how this is used.
  */
-REGISTER_CONTROLLER(CFootBotDiffusion, "footbot_diffusion_controller")
+REGISTER_CONTROLLER(CMainSim, "main_sim_controller")
