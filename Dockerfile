@@ -95,5 +95,5 @@ RUN mkdir build && cd build &&\
     cmake -DCMAKE_BUILD_TYPE=Debug .. &&\
     make -j $(nproc)
 
-ENTRYPOINT [ "/root/examples/startup.sh" ]
+ENTRYPOINT [ "bash", "/root/examples/startup.sh" ]
 CMD [ "main_simulation.argos" ]
