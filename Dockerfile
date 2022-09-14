@@ -39,7 +39,7 @@ ARG UPDATE_ARGOS=unknown
 
 # Install Argos from source
 WORKDIR /root
-RUN git clone --depth 1 --branch 3.0.0-beta59 https://github.com/ilpincy/argos3.git &&\
+RUN git clone --depth 1 https://github.com/bourquejulien/inf3995-argos3.git argos3 &&\
     cd argos3 &&\
     mkdir build_simulator &&\
     cd build_simulator &&\
@@ -78,7 +78,9 @@ ENV WEBVIZ_PORT=8000
 ARG WEB_SOCKET_PORT=3000
 ARG SIMULATION_PORT=9854
 
+EXPOSE $WEBVIZ_PORT
 EXPOSE $WEB_SOCKET_PORT
+EXPOSE $SIMULATION_PORT
 
 WORKDIR /root/examples
 
