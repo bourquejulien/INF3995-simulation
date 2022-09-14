@@ -9,6 +9,7 @@
 /****************************************/
 
 const int max_length = 1024;
+const unsigned short SERVER_PORT = 9854;
 
 CMainSimulation::CMainSimulation() :
    m_pcWheels(NULL),
@@ -17,6 +18,7 @@ CMainSimulation::CMainSimulation() :
    m_fDelta(0.5f),
    m_fWheelVelocity(2.5f),
    m_is_init(false),
+   m_server_port(SERVER_PORT),
    m_cGoStraightAngleRange(-ToRadians(m_cAlpha),
                            ToRadians(m_cAlpha)) {}
 
@@ -25,7 +27,7 @@ CMainSimulation::CMainSimulation() :
 
 void CMainSimulation::Init(TConfigurationNode& t_node) {
    m_io_context = new boost::asio::io_context();
-   m_acceptor = new tcp::acceptor(*m_io_context, tcp::endpoint(tcp::v4(), 9854));
+   m_acceptor = new tcp::acceptor(*m_io_context, tcp::endpoint(tcp::v4(), m_server_port));
 
    m_acceptor -> non_blocking(true);
    

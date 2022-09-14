@@ -113,6 +113,8 @@ private:
 
    bool m_is_init;
 
+   unsigned short m_server_port;
+
    /*
     * The following variables are used as parameters for the
     * algorithm. You can set their value in the <parameters> section
