@@ -14,11 +14,6 @@ RUN apt update && apt install -y \
 # Install ARGoS dependencies
 RUN apt update && apt install -y \
     wget \
-    freeglut3-dev \
-    qtbase5-dev \
-    qtchooser \
-    qt5-qmake \
-    qtbase5-dev-tools \
     libxi-dev \
     libxmu-dev \
     libfreeimage-dev \
@@ -39,22 +34,23 @@ ARG UPDATE_ARGOS=unknown
 
 # Install Argos from source
 WORKDIR /root
-RUN git clone --depth 1 https://github.com/bourquejulien/inf3995-argos3.git argos3 &&\
-    cd argos3 &&\
-    mkdir build_simulator &&\
-    cd build_simulator &&\
+RUN git clone --depth 1 https://github.com/bourquejulien/inf3995-argos3.git argos3 && \
+    cd argos3 && \
+    mkdir build_simulator && \
+    cd build_simulator && \
     cmake ../src -DCMAKE_BUILD_TYPE=Debug \
      -DARGOS_BUILD_FOR=simulator \
      -DARGOS_THREADSAFE_LOG=ON \
-     -DARGOS_DYNAMIC_LOADING=ON &&\
-    make -j $(nproc)
-RUN touch ./argos3/build_simulator/argos3.1.gz &&\
-    touch ./argos3/build_simulator/README.html &&\
-    cd ./argos3/build_simulator &&\
-    make install
-RUN chmod +x ./argos3/build_simulator/argos_post_install.sh &&\
-    ./argos3/build_simulator/argos_post_install.sh &&\
-    echo "\nsource /root/argos3/build_simulator/setup_env.sh\n" >> /.bashrc
+     -DARGOS_DYNAMIC_LOADING=ON && \
+    make -j $(nproc) && \
+    touch argos3.1.gz && \
+    touch README.html && \
+    make install && \
+    chmod +x argos_post_install.sh && \
+    ./argos_post_install.sh && \
+    echo "\nsource /root/argos3/build_simulator/setup_env.sh\n" >> ~/.bashrc&& \
+    cd /root && \
+    rm -rf argos
 
 FROM build as webviz
 
@@ -66,11 +62,10 @@ RUN git clone --depth 1 https://github.com/bourquejulien/argos3-webviz webviz &&
     cd build &&\
     cmake -DCMAKE_BUILD_TYPE=Release ../src &&\
     make -j $(nproc) &&\
-    make install
-
-#################################
-#          YOUR CODE            #
-#################################
+    make install && \
+    cd /root && \
+    mv webviz/client client &&\
+    rm -rf webviz
 
 FROM webviz as final
 
@@ -88,7 +83,7 @@ COPY . .
 
 RUN sed -i "s/port=3000/port=${WEB_SOCKET_PORT}/g" experiments/main_simulation.argos &&\
     sed -i "s/9854/${SIMULATION_PORT}/g" controllers/main_simulation/main_simulation.cpp &&\
-    sed -i "s/:3000/:${WEB_SOCKET_PORT}/g" /root/webviz/client/index.html
+    sed -i "s/:3000/:${WEB_SOCKET_PORT}/g" /root/client/index.html
 
 # Build your code (here examples)
 RUN mkdir build && cd build &&\
