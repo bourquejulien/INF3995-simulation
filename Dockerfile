@@ -29,9 +29,6 @@ RUN apt update && apt install -y \
 # Install WebViz dependencies
 RUN apt update && apt install cmake git zlib1g-dev libssl-dev -y
 
-# Add dummy argument to force rebuild starting from that point
-ARG UPDATE_ARGOS=unknown
-
 # Install Argos from source
 WORKDIR /root
 RUN git clone --depth 1 https://github.com/bourquejulien/inf3995-argos3.git argos3 && \
