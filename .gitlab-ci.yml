@@ -1,0 +1,20 @@
+image: docker:22.06-rc
+
+.before: &before
+    tags:
+        - x86
+    only:
+        refs:
+            - main
+            - merge_requests
+    before_script:
+        - docker info
+
+stages:
+    - build
+
+build:
+    stage: build
+    <<: *before
+    script:
+        - docker build .
