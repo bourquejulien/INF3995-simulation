@@ -1,4 +1,4 @@
 include_directories(${CMAKE_SOURCE_DIR}/controllers)
 
 add_subdirectory(main_simulation)
-
+add_subdirectory(crazyflie_sensing)
