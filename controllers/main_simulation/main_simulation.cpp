@@ -26,10 +26,10 @@ CMainSimulation::CMainSimulation() :
 /****************************************/
 
 void CMainSimulation::Init(TConfigurationNode& t_node) {
-   m_io_context = new boost::asio::io_context();
-   m_acceptor = new tcp::acceptor(*m_io_context, tcp::endpoint(tcp::v4(), m_server_port));
+   //m_io_context = new boost::asio::io_context();
+   //m_acceptor = new tcp::acceptor(*m_io_context, tcp::endpoint(tcp::v4(), m_server_port));
 
-   m_acceptor -> non_blocking(true);
+   //m_acceptor -> non_blocking(true);
    
    /*
     * Get sensor/actuator handles
@@ -73,15 +73,16 @@ void CMainSimulation::Init(TConfigurationNode& t_node) {
 
 void CMainSimulation::ControlStep() {
    boost::system::error_code error;
-   tcp::socket socket = m_acceptor->accept(error);
+   //tcp::socket socket = m_acceptor->accept(error);
 
-   if (!error)
-   {
-      std::thread(&CMainSimulation::TcpSession, this, std::move(socket)).detach();
-   }
+   // if (!error)
+   // {
+   //    std::thread(&CMainSimulation::TcpSession, this, std::move(socket)).detach();
+   // }
 
 
-   this->ProcessCommands();
+   //this->ProcessCommands();]
+   this->m_is_init = true;
    
    /* Get readings from proximity sensor */
    const CCI_FootBotProximitySensor::TReadings& tProxReads = m_pcProximity->GetReadings();
@@ -197,10 +198,10 @@ void CMainSimulation::Reset()
 
 void CMainSimulation::Destroy()
 {
-   delete m_io_context;
-   m_io_context = nullptr;
-   delete m_acceptor;
-   m_acceptor = nullptr;
+   //delete m_io_context;
+   //m_io_context = nullptr;
+   //delete m_acceptor;
+   //m_acceptor = nullptr;
 }
 
 /****************************************/
