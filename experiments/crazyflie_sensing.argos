@@ -31,7 +31,7 @@
       </actuators>
       <sensors>
         <range_and_bearing      implementation="medium" medium="rab" show_rays="false" />
-        <crazyflie_distance_scanner implementation="rot_z_only"  show_rays="true" />
+        <crazyflie_distance_scanner implementation="rot_z_only"  show_rays="false" />
         <positioning            implementation="default"/>
         <battery implementation="default"/>
       </sensors>
@@ -94,7 +94,7 @@
   <!-- * Visualization * -->
   <!-- ****************** -->
   <visualization>
-    <qt-opengl>
+    <!-- <qt-opengl>
       <camera>
       <placements>
         <placement index="0" position="2,0,4"
@@ -102,7 +102,8 @@
                    lens_focal_length="20" />
         </placements>
       </camera>
-    </qt-opengl>
+    </qt-opengl> -->
+    <webviz port=3000 />
   </visualization>
 
 </argos-configuration>
