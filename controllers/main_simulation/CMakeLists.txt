@@ -1,5 +1,5 @@
-add_library(crazyflie_sensing SHARED crazyflie_sensing.h crazyflie_sensing.cpp)
-target_link_libraries(crazyflie_sensing
+add_library(main_simulation SHARED main_simulation.h main_simulation.cpp)
+target_link_libraries(main_simulation
   argos3core_simulator
   argos3plugin_simulator_crazyflie
   argos3plugin_simulator_genericrobot)

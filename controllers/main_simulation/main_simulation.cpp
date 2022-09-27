@@ -1,5 +1,5 @@
 /* Include the controller definition */
-#include "crazyflie_sensing.h"
+#include "main_simulation.h"
 /* Function definitions for XML parsing */
 #include <argos3/core/utility/configuration/argos_configuration.h>
 /* 2D vector definition */
@@ -10,7 +10,7 @@
 /****************************************/
 /****************************************/
 
-CCrazyflieSensing::CCrazyflieSensing() :
+CMainSimulation::CMainSimulation() :
    m_pcDistance(NULL),
    m_pcPropellers(NULL),
    m_pcRNG(NULL),
@@ -23,7 +23,7 @@ CCrazyflieSensing::CCrazyflieSensing() :
 /****************************************/
 /****************************************/
 
-void CCrazyflieSensing::Init(TConfigurationNode& t_node) {
+void CMainSimulation::Init(TConfigurationNode& t_node) {
    try {
       /*
        * Initialize sensors/actuators
@@ -59,7 +59,7 @@ void CCrazyflieSensing::Init(TConfigurationNode& t_node) {
 /****************************************/
 /****************************************/
 
-void CCrazyflieSensing::ControlStep() {
+void CMainSimulation::ControlStep() {
    // Dummy behavior: takeoff for 10 steps, 
    // then moves in a square shape for 200 steps then lands.
 
@@ -121,7 +121,7 @@ void CCrazyflieSensing::ControlStep() {
 /****************************************/
 /****************************************/
 
-bool CCrazyflieSensing::TakeOff() {
+bool CMainSimulation::TakeOff() {
    CVector3 cPos = m_pcPos->GetReading().Position;
    if(Abs(cPos.GetZ() - 2.0f) < 0.01f) return false;
    cPos.SetZ(2.0f);
@@ -132,7 +132,7 @@ bool CCrazyflieSensing::TakeOff() {
 /****************************************/
 /****************************************/
 
-bool CCrazyflieSensing::Land() {
+bool CMainSimulation::Land() {
    CVector3 cPos = m_pcPos->GetReading().Position;
    if(Abs(cPos.GetZ()) < 0.01f) return false;
    cPos.SetZ(0.0f);
@@ -143,7 +143,7 @@ bool CCrazyflieSensing::Land() {
 /****************************************/
 /****************************************/
 
-void CCrazyflieSensing::Reset() {
+void CMainSimulation::Reset() {
 }
 
 /****************************************/
@@ -159,4 +159,4 @@ void CCrazyflieSensing::Reset() {
  * class to instantiate.
  * See also the XML configuration files for an example of how this is used.
  */
-REGISTER_CONTROLLER(CCrazyflieSensing, "crazyflie_sensing_controller")
+REGISTER_CONTROLLER(CMainSimulation, "main_simulation_controller")

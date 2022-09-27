@@ -78,10 +78,8 @@ WORKDIR /root/examples
 
 COPY . .
 
-#RUN sed -i "s/port=3000/port=${WEB_SOCKET_PORT}/g" experiments/main_simulation.argos &&\
-RUN sed -i "s/port=3000/port=${WEB_SOCKET_PORT}/g" experiments/crazyflie_sensing.argos &&\
-#    sed -i "s/9854/${SIMULATION_PORT}/g" controllers/main_simulation/main_simulation.cpp &&\
-    sed -i "s/9854/${SIMULATION_PORT}/g" controllers/crazyflie_sensing/crazyflie_sensing.cpp &&\
+RUN sed -i "s/port=3000/port=${WEB_SOCKET_PORT}/g" experiments/main_simulation.argos &&\
+    sed -i "s/9854/${SIMULATION_PORT}/g" controllers/main_simulation/main_simulation.cpp &&\
     sed -i "s/:3000/:${WEB_SOCKET_PORT}/g" /root/client/index.html
 
 # Build your code (here examples)
@@ -90,5 +88,4 @@ RUN mkdir build && cd build &&\
     make -j $(nproc)
 
 ENTRYPOINT [ "bash", "/root/examples/startup.sh" ]
-#CMD [ "main_simulation.argos" ]
-CMD [ "crazyflie_sensing.argos" ]
+CMD [ "main_simulation.argos" ]

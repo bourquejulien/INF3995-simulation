@@ -8,8 +8,8 @@
  *    experiments/foraging.argos
  */
 
-#ifndef CRAZYFLIE_SENSING_H
-#define CRAZYFLIE_SENSING_H
+#ifndef MAIN_SIMULATION_H
+#define MAIN_SIMULATION_H
 
 /*
  * Include some necessary headers.
@@ -40,14 +40,14 @@ using namespace argos;
 /*
  * A controller is simply an implementation of the CCI_Controller class.
  */
-class CCrazyflieSensing : public CCI_Controller {
+class CMainSimulation : public CCI_Controller {
 
 public:
 
    /* Class constructor. */
-   CCrazyflieSensing();
+   CMainSimulation();
    /* Class destructor. */
-   virtual ~CCrazyflieSensing() {}
+   virtual ~CMainSimulation() {}
 
    /*
     * This function initializes the controller.
