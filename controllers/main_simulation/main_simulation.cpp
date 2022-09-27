@@ -81,7 +81,7 @@ void CMainSimulation::ControlStep() {
    // }
 
 
-   //this->ProcessCommands();]
+   //this->ProcessCommands();
    this->m_is_init = true;
    
    /* Get readings from proximity sensor */
