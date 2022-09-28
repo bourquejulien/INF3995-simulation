@@ -1,5 +1,5 @@
 syntax = "proto3";
-package simuation;
+package simulation;
 
 service Simulation {
   rpc StartMission (MissionRequest) returns (Reply) {}

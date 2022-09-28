@@ -76,16 +76,18 @@ EXPOSE $SIMULATION_PORT
 
 WORKDIR /root/examples
 
-COPY 
+COPY ./install_grpc.sh .
+RUN ./install_grpc.sh
+
+WORKDIR /root/examples
 
 COPY . .
 
 RUN sed -i "s/port=3000/port=${WEB_SOCKET_PORT}/g" experiments/main_simulation.argos &&\
-    sed -i "s/9854/${SIMULATION_PORT}/g" communication/server.cc &&\
+    sed -i "s/9854/${SIMULATION_PORT}/g" communication/server.cpp &&\
     sed -i "s/:3000/:${WEB_SOCKET_PORT}/g" /root/client/index.html
 
-# Build your code (here examples)
-RUN mkdir build && cd build &&\
+RUN mkdir -p build && cd build &&\
     cmake -DCMAKE_BUILD_TYPE=Debug .. &&\
     make -j $(nproc)
 
