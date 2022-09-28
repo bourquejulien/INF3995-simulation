@@ -12,6 +12,7 @@ set(CMAKE_MACOSX_RPATH 0)
 # Set the path where CMake will find additional scripts
 set(CMAKE_MODULE_PATH $ENV{CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 set(CMAKE_PREFIX_PATH $ENV{CMAKE_PREFIX_PATH} ${CMAKE_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/build_grpc)
 
 # Use C++17
 set(CMAKE_CXX_STANDARD 17)
@@ -26,6 +27,8 @@ link_libraries(${ARGOS_LDFLAGS})
 
 # Descend into the controllers directory
 add_subdirectory(controllers)
+add_subdirectory(communication)
+
 
 
 

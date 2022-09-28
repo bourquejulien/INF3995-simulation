@@ -31,6 +31,8 @@
 /* Definitions for random number generation */
 #include <argos3/core/utility/math/rng.h>
 
+#include <communication/server.h>
+
 /*
  * All the ARGoS stuff in the 'argos' namespace.
  * With this statement, you save typing argos:: every time.
@@ -75,7 +77,7 @@ public:
     * so the function could have been omitted. It's here just for
     * completeness.
     */
-   virtual void Destroy() {}
+   virtual void Destroy();
 
    /*
     * This function lifts the drone from the ground
@@ -115,6 +117,8 @@ private:
     
    /* Initial Position */ 
    CVector3 m_cInitialPosition;
+
+   SimulationServer m_server;
 };
 
 #endif

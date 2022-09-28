@@ -18,12 +18,16 @@ CMainSimulation::CMainSimulation()
       m_pcRABS(NULL),
       m_pcPos(NULL),
       m_pcBattery(NULL),
-      m_uiCurrentStep(0) {}
+      m_uiCurrentStep(0),
+      m_server() {}
 
 /****************************************/
 /****************************************/
 
 void CMainSimulation::Init(TConfigurationNode& t_node) {
+    
+    m_server.Run();
+
     try {
         /*
          * Initialize sensors/actuators
@@ -70,11 +74,19 @@ void CMainSimulation::ControlStep() {
 
     int nInitSteps = 10;
     int nTotalSteps = 400;
-    // Takeoff
-    if (m_uiCurrentStep < nInitSteps) {
-        TakeOff();
-        m_cInitialPosition = m_pcPos->GetReading().Position;
-    } else if ((m_uiCurrentStep - nInitSteps) < nTotalSteps) {
+
+    Command command;
+    if(m_server.GetNextCommand(&command)){
+        if(command.action == Action::Start && m_uiCurrentStep < nInitSteps){
+            TakeOff();
+            m_cInitialPosition = m_pcPos->GetReading().Position;
+        } else if (command.action == Action::Stop){
+            Land();
+        }
+
+    }
+
+    if ((m_uiCurrentStep - nInitSteps) < nTotalSteps) {
         // Square pattern
         CVector3 trans(0.0f, 0.0f, 0.0f);
         if ((m_uiCurrentStep - nInitSteps) < nTotalSteps / 4) {
@@ -91,9 +103,8 @@ void CMainSimulation::ControlStep() {
             (m_cInitialPosition + trans) - currentPosition;
 
         m_pcPropellers->SetRelativePosition(relativePositionCommand);
-    } else {
-        Land();
     }
+
     // Print current position.
     LOG << "Position (x,y,z) = (" << m_pcPos->GetReading().Position.GetX()
         << "," << m_pcPos->GetReading().Position.GetY() << ","
@@ -145,7 +156,13 @@ bool CMainSimulation::Land() {
 /****************************************/
 /****************************************/
 
-void CMainSimulation::Reset() {}
+void CMainSimulation::Reset() {
+    
+}
+
+void CMainSimulation::Destroy() {
+    m_server.Stop();
+}
 
 /****************************************/
 /****************************************/
