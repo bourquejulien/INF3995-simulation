@@ -4,204 +4,146 @@
 #include <argos3/core/utility/configuration/argos_configuration.h>
 /* 2D vector definition */
 #include <argos3/core/utility/math/vector2.h>
+/* Logging */
+#include <argos3/core/utility/logging/argos_log.h>
 
 /****************************************/
 /****************************************/
-
-const int max_length = 1024;
-const unsigned short SERVER_PORT = 9854;
 
 CMainSimulation::CMainSimulation() :
-   m_pcWheels(NULL),
-   m_pcProximity(NULL),
-   m_cAlpha(10.0f),
-   m_fDelta(0.5f),
-   m_fWheelVelocity(2.5f),
-   m_is_init(false),
-   m_server_port(SERVER_PORT),
-   m_cGoStraightAngleRange(-ToRadians(m_cAlpha),
-                           ToRadians(m_cAlpha)) {}
+   m_pcDistance(NULL),
+   m_pcPropellers(NULL),
+   m_pcRNG(NULL),
+   m_pcRABA(NULL),
+   m_pcRABS(NULL),
+   m_pcPos(NULL),
+   m_pcBattery(NULL),
+   m_uiCurrentStep(0) {}
 
 /****************************************/
 /****************************************/
 
 void CMainSimulation::Init(TConfigurationNode& t_node) {
-   //m_io_context = new boost::asio::io_context();
-   //m_acceptor = new tcp::acceptor(*m_io_context, tcp::endpoint(tcp::v4(), m_server_port));
+   try {
+      /*
+       * Initialize sensors/actuators
+       */
+      m_pcDistance   = GetSensor  <CCI_CrazyflieDistanceScannerSensor>("crazyflie_distance_scanner");
+      m_pcPropellers = GetActuator  <CCI_QuadRotorPositionActuator>("quadrotor_position");
+      /* Get pointers to devices */
+      m_pcRABA   = GetActuator<CCI_RangeAndBearingActuator>("range_and_bearing");
+      m_pcRABS   = GetSensor  <CCI_RangeAndBearingSensor  >("range_and_bearing");
+      try {
+         m_pcPos = GetSensor  <CCI_PositioningSensor>("positioning");
+      }
+      catch(CARGoSException& ex) {}
+      try {
+         m_pcBattery = GetSensor<CCI_BatterySensor>("battery");
+      }
+      catch(CARGoSException& ex) {}      
+   }
+   catch(CARGoSException& ex) {
+      THROW_ARGOSEXCEPTION_NESTED("Error initializing the crazyflie sensing controller for robot \"" << GetId() << "\"", ex);
+   }
+   /*
+    * Initialize other stuff
+    */
+   /* Create a random number generator. We use the 'argos' category so
+      that creation, reset, seeding and cleanup are managed by ARGoS. */
+   m_pcRNG = CRandom::CreateRNG("argos");
 
-   //m_acceptor -> non_blocking(true);
-   
-   /*
-    * Get sensor/actuator handles
-    *
-    * The passed string (ex. "differential_steering") corresponds to the
-    * XML tag of the device whose handle we want to have. For a list of
-    * allowed values, type at the command prompt:
-    *
-    * $ argos3 -q actuators
-    *
-    * to have a list of all the possible actuators, or
-    *
-    * $ argos3 -q sensors
-    *
-    * to have a list of all the possible sensors.
-    *
-    * NOTE: ARGoS creates and initializes actuators and sensors
-    * internally, on the basis of the lists provided the configuration
-    * file at the <controllers><footbot_diffusion><actuators> and
-    * <controllers><footbot_diffusion><sensors> sections. If you forgot to
-    * list a device in the XML and then you request it here, an error
-    * occurs.
-    */
-   m_pcWheels    = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
-   m_pcProximity = GetSensor  <CCI_FootBotProximitySensor      >("footbot_proximity"    );
-   /*
-    * Parse the configuration file
-    *
-    * The user defines this part. Here, the algorithm accepts three
-    * parameters and it's nice to put them in the config file so we don't
-    * have to recompile if we want to try other settings.
-    */
-   GetNodeAttributeOrDefault(t_node, "alpha", m_cAlpha, m_cAlpha);
-   m_cGoStraightAngleRange.Set(-ToRadians(m_cAlpha), ToRadians(m_cAlpha));
-   GetNodeAttributeOrDefault(t_node, "delta", m_fDelta, m_fDelta);
-   GetNodeAttributeOrDefault(t_node, "velocity", m_fWheelVelocity, m_fWheelVelocity);
+   m_uiCurrentStep = 0;
+   Reset();
 }
 
 /****************************************/
 /****************************************/
 
 void CMainSimulation::ControlStep() {
-   boost::system::error_code error;
-   //tcp::socket socket = m_acceptor->accept(error);
+   // Dummy behavior: takeoff for 10 steps, 
+   // then moves in a square shape for 200 steps then lands.
 
-   // if (!error)
-   // {
-   //    std::thread(&CMainSimulation::TcpSession, this, std::move(socket)).detach();
-   // }
-
-
-   //this->ProcessCommands();
-   this->m_is_init = true;
-   
-   /* Get readings from proximity sensor */
-   const CCI_FootBotProximitySensor::TReadings& tProxReads = m_pcProximity->GetReadings();
-   /* Sum them together */
-   CVector2 cAccumulator;
-   for(size_t i = 0; i < tProxReads.size(); ++i) {
-      cAccumulator += CVector2(tProxReads[i].Value, tProxReads[i].Angle);
-   }
-   cAccumulator /= tProxReads.size();
-   /* If the angle of the vector is small enough and the closest obstacle
-    * is far enough, continue going straight, otherwise curve a little
-    */
-   CRadians cAngle = cAccumulator.Angle();
-
-   if (!m_is_init)
-   {
-      return;
-   }
-
-   if(m_cGoStraightAngleRange.WithinMinBoundIncludedMaxBoundIncluded(cAngle) &&
-      cAccumulator.Length() < m_fDelta ) {
-      /* Go straight */
-      m_pcWheels->SetLinearVelocity(m_fWheelVelocity, m_fWheelVelocity);
-   }
-   else {
-      /* Turn, depending on the sign of the angle */
-      if(cAngle.GetValue() > 0.0f) {
-         m_pcWheels->SetLinearVelocity(m_fWheelVelocity, 0.0f);
+   int nInitSteps = 10;
+   int nTotalSteps = 400;
+   // Takeoff
+   if ( m_uiCurrentStep < nInitSteps ) {
+      TakeOff();
+      m_cInitialPosition = m_pcPos->GetReading().Position;
+   } 
+   else if ((m_uiCurrentStep - nInitSteps) < nTotalSteps) {
+      // Square pattern
+      CVector3 trans(0.0f, 0.0f, 0.0f);
+      if ( (m_uiCurrentStep - nInitSteps) < nTotalSteps/4 ) {
+         trans.SetX(1.0f);
+      }
+      else if ( (m_uiCurrentStep - nInitSteps) < 2*nTotalSteps/4 ) {
+         trans.SetY(1.0f);
+      }
+      else if ( (m_uiCurrentStep - nInitSteps) < 3*nTotalSteps/4 ) {
+         trans.SetX(-1.0f);
       }
       else {
-         m_pcWheels->SetLinearVelocity(0.0f, m_fWheelVelocity);
+         trans.SetY(-1.0f);
       }
+      CVector3 currentPosition = m_pcPos->GetReading().Position;
+      CVector3 relativePositionCommand = (m_cInitialPosition + trans) - currentPosition; 
+      
+      m_pcPropellers->SetRelativePosition(relativePositionCommand);
    }
-   
-}
+   else {
+      Land();
+   }   
+   // Print current position.
+   LOG << "Position (x,y,z) = (" << m_pcPos->GetReading().Position.GetX() << ","
+       << m_pcPos->GetReading().Position.GetY() << ","
+       << m_pcPos->GetReading().Position.GetZ() << ")" << std::endl; 
 
-void CMainSimulation::TcpSession(tcp::socket sock)
-{
-   boost::system::error_code error;
-  try
-  {
-    while(!error)
-    {
-      char data[max_length];
+   // Print current battery level
+   const CCI_BatterySensor::SReading& sBatRead = m_pcBattery->GetReading();
+   LOG << "Battery level: " << sBatRead.AvailableCharge  << std::endl;
 
-      if (error == boost::asio::error::eof)
-        break;
-      else if (error)
-        throw boost::system::system_error(error);
-
-      size_t length = sock.read_some(boost::asio::buffer(data), error);
-
-      char code = data[0];
-      
-      std::string response = "Succeded from Argos";
-
-      Message message;
-
-      switch (code)
-      {
-      case 'i':
-         message = {Action::Init, ""};
-         break;
-      
-      case 't':
-         message = {Action::Takeoff, ""};
-         break;
-      
-      default:
-         response = "Failed from Argos";
-         break;
-      }
-
-      m_history_mutex.lock();
-      m_command_history.push(message);
-      m_history_mutex.unlock();
-
-      boost::asio::write(sock, boost::asio::buffer(response));
-    }
-  }
-  catch (std::exception& e)
-  {
-    std::cerr << "Exception in thread: " << e.what() << "\n";
-  }
-}
-
-void CMainSimulation::ProcessCommands()
-{
-   Message command;
-
-   m_history_mutex.lock();
-
-   if(m_command_history.empty())
-   {
-      m_history_mutex.unlock();
-      return;
+   // Look here for documentation on the distance sensor: /root/argos3/src/plugins/robots/crazyflie/control_interface/ci_crazyflie_distance_scanner_sensor.h
+   // Read and print distance sensor measurements
+   CCI_CrazyflieDistanceScannerSensor::TReadingsMap sDistRead = 
+      m_pcDistance->GetReadingsMap();
+   auto iterDistRead = sDistRead.begin();
+   if (sDistRead.size() == 4) {
+      LOG << "Front dist: " << (iterDistRead++)->second  << std::endl;
+      LOG << "Left dist: "  << (iterDistRead++)->second  << std::endl;
+      LOG << "Back dist: "  << (iterDistRead++)->second  << std::endl;
+      LOG << "Right dist: " << (iterDistRead)->second  << std::endl;
    }
 
-   command = m_command_history.front();
-   m_command_history.pop();
-   m_history_mutex.unlock();
-
-   if(command.action == Action::Init)
-   {
-      this->m_is_init = true;
-   }
+   // Increase step counter
+   m_uiCurrentStep++;
 }
 
-void CMainSimulation::Reset()
-{
-   m_is_init = false;
+/****************************************/
+/****************************************/
+
+bool CMainSimulation::TakeOff() {
+   CVector3 cPos = m_pcPos->GetReading().Position;
+   if(Abs(cPos.GetZ() - 2.0f) < 0.01f) return false;
+   cPos.SetZ(2.0f);
+   m_pcPropellers->SetAbsolutePosition(cPos);
+   return true;
 }
 
-void CMainSimulation::Destroy()
-{
-   //delete m_io_context;
-   //m_io_context = nullptr;
-   //delete m_acceptor;
-   //m_acceptor = nullptr;
+/****************************************/
+/****************************************/
+
+bool CMainSimulation::Land() {
+   CVector3 cPos = m_pcPos->GetReading().Position;
+   if(Abs(cPos.GetZ()) < 0.01f) return false;
+   cPos.SetZ(0.0f);
+   m_pcPropellers->SetAbsolutePosition(cPos);
+   return true;
+}
+
+/****************************************/
+/****************************************/
+
+void CMainSimulation::Reset() {
 }
 
 /****************************************/
@@ -211,10 +153,10 @@ void CMainSimulation::Destroy()
  * This statement notifies ARGoS of the existence of the controller.
  * It binds the class passed as first argument to the string passed as
  * second argument.
- * The string is then usable in the configuration file to refer to this
- * controller.
- * When ARGoS reads that string in the configuration file, it knows which
- * controller class to instantiate.
- * See also the configuration files for an example of how this is used.
+ * The string is then usable in the XML configuration file to refer to
+ * this controller.
+ * When ARGoS reads that string in the XML file, it knows which controller
+ * class to instantiate.
+ * See also the XML configuration files for an example of how this is used.
  */
 REGISTER_CONTROLLER(CMainSimulation, "main_simulation_controller")
