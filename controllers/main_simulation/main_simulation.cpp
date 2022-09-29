@@ -94,10 +94,9 @@ void CMainSimulation::ControlStep()
     {
         TakeOff();
         m_cInitialPosition = m_pcPos->GetReading().Position;
-        LOG << "Take off" << std::endl;
+        LOG << "ID = " << GetId() << " - " << "Taking off..." << std::endl;
     }
-
-    else if (m_currentAction == Action::Stop && m_actionTime >= 0)
+    else if (m_currentAction == Action::Stop && m_actionTime > 0)
     {
         Land();
     }
