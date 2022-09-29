@@ -31,17 +31,16 @@ Status ServiceImplementation::EndMission(ServerContext* context,
     return Status::OK;
 }
 
-SimulationServer::SimulationServer()
-    : m_address("0.0.0.0:9854"), m_service(m_queueMutex, m_queue) {
+SimulationServer::SimulationServer() : m_service(m_queueMutex, m_queue) {
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
 }
 
-void SimulationServer::Run() {
+void SimulationServer::Run(std::string address) {
     ServerBuilder builder;
 
     // Listen on the given address without any authentication mechanism.
-    builder.AddListeningPort(m_address, grpc::InsecureServerCredentials());
+    builder.AddListeningPort(address, grpc::InsecureServerCredentials());
 
     // Register "service" as the instance through which we'll communicate with
     // clients. In this case it corresponds to an *synchronous* service.
@@ -50,7 +49,7 @@ void SimulationServer::Run() {
     // Assemble the server.
     m_server = std::unique_ptr<Server>(builder.BuildAndStart());
 
-    std::cout << "Server listening on " << m_address << std::endl;
+    std::cout << "Server listening on " << address << std::endl;
 }
 
 bool SimulationServer::GetNextCommand(Command* command) {

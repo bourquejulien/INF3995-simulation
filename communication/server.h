@@ -18,11 +18,11 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using simuation::Simulation;
-using simuation::MissionRequest;
-using simuation::Reply;
+using simulation::Simulation;
+using simulation::MissionRequest;
+using simulation::Reply;
 
-enum class Action {Start, Stop};
+enum class Action {None, Start, Stop};
 
 struct Command {
   std::string uri;
@@ -45,7 +45,7 @@ class SimulationServer final {
   public:
     SimulationServer();
     virtual ~SimulationServer() {}
-    void Run();
+    void Run(std::string address);
     void Stop();
     bool GetNextCommand(Command* command);
   private:
@@ -53,7 +53,6 @@ class SimulationServer final {
     std::queue<Command> m_queue;
     std::unique_ptr<Server> m_server;
     ServiceImplementation m_service;
-    std::string m_address;
 };
 
 

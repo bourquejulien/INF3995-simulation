@@ -19,14 +19,22 @@ CMainSimulation::CMainSimulation()
       m_pcPos(NULL),
       m_pcBattery(NULL),
       m_uiCurrentStep(0),
+      m_actionTime(0),
+      m_currentAction(Action::None),
       m_server() {}
 
 /****************************************/
 /****************************************/
 
 void CMainSimulation::Init(TConfigurationNode& t_node) {
+
+    std::string id = GetId();
+    id.substr(id.length() - 1);
+    unsigned int port = 9854 + stoi(id.substr(id.length() - 1));
+
+    std::string address = "0.0.0.0:" + std::to_string(port);
     
-    m_server.Run();
+    m_server.Run(address);
 
     try {
         /*
@@ -61,6 +69,11 @@ void CMainSimulation::Init(TConfigurationNode& t_node) {
        that creation, reset, seeding and cleanup are managed by ARGoS. */
     m_pcRNG = CRandom::CreateRNG("argos");
 
+    // CVector3 position = m_pcPos->GetReading().Position;
+    // position.SetX(position.GetX() * m_pcRNG->Uniform(CRange(0, 1000))/1000.0);
+    // position.SetY(position.GetY() * m_pcRNG->Uniform(CRange(0, 1000))/1000.0);
+    // m_pcPropellers->SetAbsolutePosition(position);
+
     m_uiCurrentStep = 0;
     Reset();
 }
@@ -69,44 +82,47 @@ void CMainSimulation::Init(TConfigurationNode& t_node) {
 /****************************************/
 
 void CMainSimulation::ControlStep() {
-    // Dummy behavior: takeoff for 10 steps,
-    // then moves in a square shape for 200 steps then lands.
+   // Dummy behavior: takeoff for 10 steps, 
+   // then moves in a square shape for 200 steps then lands.
 
-    int nInitSteps = 10;
-    int nTotalSteps = 400;
+   int nInitSteps = 10;
+   int nTotalSteps = 400;
 
-    Command command;
-    if(m_server.GetNextCommand(&command)){
-        if(command.action == Action::Start && m_uiCurrentStep < nInitSteps){
-            TakeOff();
-            m_cInitialPosition = m_pcPos->GetReading().Position;
-        } else if (command.action == Action::Stop){
-            Land();
-        }
+   HandleAction();
 
-    }
 
-    if ((m_uiCurrentStep - nInitSteps) < nTotalSteps) {
-        // Square pattern
-        CVector3 trans(0.0f, 0.0f, 0.0f);
-        if ((m_uiCurrentStep - nInitSteps) < nTotalSteps / 4) {
-            trans.SetX(1.0f);
-        } else if ((m_uiCurrentStep - nInitSteps) < 2 * nTotalSteps / 4) {
-            trans.SetY(1.0f);
-        } else if ((m_uiCurrentStep - nInitSteps) < 3 * nTotalSteps / 4) {
-            trans.SetX(-1.0f);
-        } else {
-            trans.SetY(-1.0f);
-        }
-        CVector3 currentPosition = m_pcPos->GetReading().Position;
-        CVector3 relativePositionCommand =
-            (m_cInitialPosition + trans) - currentPosition;
-
-        m_pcPropellers->SetRelativePosition(relativePositionCommand);
-    }
+   // Takeoff
+   if (m_currentAction == Action::Start && m_actionTime > 0) {
+      TakeOff();
+      m_cInitialPosition = m_pcPos->GetReading().Position;
+      LOG << "Take off" << std::endl;
+   }
+//    else if ((m_uiCurrentStep - nInitSteps) < nTotalSteps) {
+//       // Square pattern
+//       CVector3 trans(0.0f, 0.0f, 0.0f);
+//       if ( (m_uiCurrentStep - nInitSteps) < nTotalSteps/4 ) {
+//          trans.SetX(1.0f);
+//       }
+//       else if ( (m_uiCurrentStep - nInitSteps) < 2*nTotalSteps/4 ) {
+//          trans.SetY(1.0f);
+//       }
+//       else if ( (m_uiCurrentStep - nInitSteps) < 3*nTotalSteps/4 ) {
+//          trans.SetX(-1.0f);
+//       }
+//       else {
+//          trans.SetY(-1.0f);
+//       }
+//       CVector3 currentPosition = m_pcPos->GetReading().Position;
+//       CVector3 relativePositionCommand = (m_cInitialPosition + trans) - currentPosition; 
+      
+//       m_pcPropellers->SetRelativePosition(relativePositionCommand);
+//    }
+   else if (m_currentAction == Action::Stop && m_actionTime >= 0){
+      Land();
+   }  
 
     // Print current position.
-    LOG << "Position (x,y,z) = (" << m_pcPos->GetReading().Position.GetX()
+    LOG << "ID = " << GetId() << " - " << "Position (x,y,z) = (" << m_pcPos->GetReading().Position.GetX()
         << "," << m_pcPos->GetReading().Position.GetY() << ","
         << m_pcPos->GetReading().Position.GetZ() << ")" << std::endl;
 
@@ -129,6 +145,10 @@ void CMainSimulation::ControlStep() {
 
     // Increase step counter
     m_uiCurrentStep++;
+
+    if(m_actionTime > 0) {
+        --m_actionTime;
+    }
 }
 
 /****************************************/
@@ -166,6 +186,16 @@ void CMainSimulation::Destroy() {
 
 /****************************************/
 /****************************************/
+
+void CMainSimulation::HandleAction() {
+    Command command;
+ 
+    if(m_actionTime <= 0 && m_server.GetNextCommand(&command)){
+        LOG << "test - " << GetId() << std::endl;  
+        m_currentAction = command.action;
+        m_actionTime = 20;
+    }
+}
 
 /*
  * This statement notifies ARGoS of the existence of the controller.

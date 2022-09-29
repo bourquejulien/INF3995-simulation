@@ -84,7 +84,7 @@ WORKDIR /root/examples
 COPY . .
 
 RUN sed -i "s/port=3000/port=${WEB_SOCKET_PORT}/g" experiments/main_simulation.argos &&\
-    sed -i "s/9854/${SIMULATION_PORT}/g" communication/server.cpp &&\
+    sed -i "s/9854/${SIMULATION_PORT}/g" controllers/main_simulation/main_simulation.cpp &&\
     sed -i "s/:3000/:${WEB_SOCKET_PORT}/g" /root/client/index.html
 
 RUN mkdir -p build && cd build &&\

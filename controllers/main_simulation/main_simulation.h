@@ -89,7 +89,13 @@ public:
     */
    bool Land();
 
+   void HandleAction();
+
 private:
+
+   int m_actionTime;
+
+   Action m_currentAction;
 
    /* Pointer to the crazyflie distance sensor */
    CCI_CrazyflieDistanceScannerSensor* m_pcDistance;
