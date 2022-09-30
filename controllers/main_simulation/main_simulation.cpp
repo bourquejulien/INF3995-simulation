@@ -96,9 +96,11 @@ void CMainSimulation::ControlStep()
         m_cInitialPosition = m_pcPos->GetReading().Position;
         LOG << "ID = " << GetId() << " - " << "Taking off..." << std::endl;
     }
-    else if (m_currentAction == Action::Stop && m_actionTime > 0)
+    
+    if (m_currentAction == Action::Stop && m_actionTime > 0)
     {
         Land();
+        LOG << "ID = " << GetId() << " - " << "Landing..." << std::endl;
     }
 
     // Print current position.
@@ -177,9 +179,8 @@ void CMainSimulation::HandleAction()
 
     if (m_actionTime <= 0 && m_server.GetNextCommand(&command))
     {
-        LOG << "test - " << GetId() << std::endl;
         m_currentAction = command.action;
-        m_actionTime    = 20;
+        m_actionTime    = 5;
     }
 }
 
