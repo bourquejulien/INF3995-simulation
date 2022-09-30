@@ -1,0 +1,15 @@
+syntax = "proto3";
+package simulation;
+
+service Simulation {
+  rpc StartMission (MissionRequest) returns (Reply) {}
+  rpc EndMission (MissionRequest) returns (Reply) {}
+}
+
+message MissionRequest {
+  string uri = 1;
+}
+
+message Reply {
+  string message = 1;
+}

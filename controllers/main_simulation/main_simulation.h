@@ -31,6 +31,8 @@
 /* Definitions for random number generation */
 #include <argos3/core/utility/math/rng.h>
 
+#include <communication/server.h>
+
 /*
  * All the ARGoS stuff in the 'argos' namespace.
  * With this statement, you save typing argos:: every time.
@@ -40,81 +42,87 @@ using namespace argos;
 /*
  * A controller is simply an implementation of the CCI_Controller class.
  */
-class CMainSimulation : public CCI_Controller {
-
+class CMainSimulation : public CCI_Controller
+{
 public:
+    /* Class constructor. */
+    CMainSimulation();
+    /* Class destructor. */
+    virtual ~CMainSimulation() {}
 
-   /* Class constructor. */
-   CMainSimulation();
-   /* Class destructor. */
-   virtual ~CMainSimulation() {}
+    /*
+     * This function initializes the controller.
+     * The 't_node' variable points to the <parameters> section in the XML
+     * file in the <controllers><footbot_foraging_controller> section.
+     */
+    virtual void Init(TConfigurationNode& t_node);
 
-   /*
-    * This function initializes the controller.
-    * The 't_node' variable points to the <parameters> section in the XML
-    * file in the <controllers><footbot_foraging_controller> section.
-    */
-   virtual void Init(TConfigurationNode& t_node);
+    /*
+     * This function is called once every time step.
+     * The length of the time step is set in the XML file.
+     */
+    virtual void ControlStep();
 
-   /*
-    * This function is called once every time step.
-    * The length of the time step is set in the XML file.
-    */
-   virtual void ControlStep();
+    /*
+     * This function resets the controller to its state right after the
+     * Init().
+     * It is called when you press the reset button in the GUI.
+     */
+    virtual void Reset();
 
-   /*
-    * This function resets the controller to its state right after the
-    * Init().
-    * It is called when you press the reset button in the GUI.
-    */
-   virtual void Reset();
+    /*
+     * Called to cleanup what done by Init() when the experiment finishes.
+     * In this example controller there is no need for clean anything up,
+     * so the function could have been omitted. It's here just for
+     * completeness.
+     */
+    virtual void Destroy();
 
-   /*
-    * Called to cleanup what done by Init() when the experiment finishes.
-    * In this example controller there is no need for clean anything up,
-    * so the function could have been omitted. It's here just for
-    * completeness.
-    */
-   virtual void Destroy() {}
+    /*
+     * This function lifts the drone from the ground
+     */
+    bool TakeOff();
 
-   /*
-    * This function lifts the drone from the ground
-    */
-   bool TakeOff();
+    /*
+     * This function returns the drone to the ground
+     */
+    bool Land();
 
-   /*
-    * This function returns the drone to the ground
-    */
-   bool Land();
+    void HandleAction();
 
 private:
+    int m_actionTime;
 
-   /* Pointer to the crazyflie distance sensor */
-   CCI_CrazyflieDistanceScannerSensor* m_pcDistance;
+    Action m_currentAction;
+
+    /* Pointer to the crazyflie distance sensor */
+    CCI_CrazyflieDistanceScannerSensor* m_pcDistance;
 
     /* Pointer to the position actuator */
-   CCI_QuadRotorPositionActuator* m_pcPropellers;
-   
-   /* Pointer to the range and bearing actuator */
-   CCI_RangeAndBearingActuator*  m_pcRABA;
+    CCI_QuadRotorPositionActuator* m_pcPropellers;
 
-   /* Pointer to the range and bearing sensor */
-   CCI_RangeAndBearingSensor* m_pcRABS;
+    /* Pointer to the range and bearing actuator */
+    CCI_RangeAndBearingActuator* m_pcRABA;
 
-   /* Pointer to the positioning sensor */
-   CCI_PositioningSensor* m_pcPos;
+    /* Pointer to the range and bearing sensor */
+    CCI_RangeAndBearingSensor* m_pcRABS;
 
-   /* Pointer to the battery sensor */
-   CCI_BatterySensor* m_pcBattery;
+    /* Pointer to the positioning sensor */
+    CCI_PositioningSensor* m_pcPos;
 
-   /* The random number generator */
-   CRandom::CRNG* m_pcRNG;
+    /* Pointer to the battery sensor */
+    CCI_BatterySensor* m_pcBattery;
 
-   /* Current step */
-   uint m_uiCurrentStep;
-    
-   /* Initial Position */ 
-   CVector3 m_cInitialPosition;
+    /* The random number generator */
+    CRandom::CRNG* m_pcRNG;
+
+    /* Current step */
+    uint m_uiCurrentStep;
+
+    /* Initial Position */
+    CVector3 m_cInitialPosition;
+
+    SimulationServer m_server;
 };
 
 #endif
