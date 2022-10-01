@@ -2,7 +2,7 @@
 
 Ce repos inclus la simulation Argos.
 
-L'exécution de la simulation nécéssite d'avoir argos3, webviz et GRPC d'installés. Comme il est long d'installer toutes ses dépendances, l'utilisation de docker est préférable.   
+L'exécution de la simulation nécessite d'avoir argos3, webviz et GRPC d'installés. Comme il est long d'installer toutes ces dépendances, l'utilisation de docker est préférable.   
 
 ## Comment démarrer la simulation
 
