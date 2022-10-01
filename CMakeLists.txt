@@ -28,7 +28,3 @@ link_libraries(${ARGOS_LDFLAGS})
 # Descend into the controllers directory
 add_subdirectory(controllers)
 add_subdirectory(communication)
-
-
-
-
