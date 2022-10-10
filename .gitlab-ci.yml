@@ -3,18 +3,32 @@ image: docker:22.06-rc
 .before: &before
     tags:
         - x86
-    only:
-        refs:
-            - main
-            - merge_requests
     before_script:
         - docker info
 
 stages:
     - build
+    - push
 
 build:
     stage: build
     <<: *before
+    only:
+        refs:
+            - merge_requests
     script:
         - docker build .
+
+push:
+    stage: push
+    <<: *before
+    only:
+        refs:
+            - main
+    variables:
+        IMAGE_NAME: "$CI_REGISTRY_IMAGE:latest"
+    script:
+        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+        - docker build --target final -t "$IMAGE_NAME" .
+        - docker push "$IMAGE_NAME"
+
