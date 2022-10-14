@@ -88,6 +88,16 @@ public:
      */
     bool Land();
 
+    /*
+     * This function determines the next angle the drone will travel in
+     */
+    CRadians ChooseAngle();
+
+    /*
+     * This function moves the drone until it meets a wall or other drone
+     */
+    bool Move();
+
     void HandleAction();
 
 private:
@@ -121,6 +131,9 @@ private:
 
     /* Initial Position */
     CVector3 m_cInitialPosition;
+
+    /* Angle drone is currently moving at in random walk */
+    CRadians m_moveAngle;
 
     SimulationServer m_server;
 };

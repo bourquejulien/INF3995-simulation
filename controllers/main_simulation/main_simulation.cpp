@@ -22,6 +22,7 @@ CMainSimulation::CMainSimulation()
 
 void CMainSimulation::Init(TConfigurationNode& t_node)
 {
+
     std::string id = GetId();
     id.substr(id.length() - 1);
     unsigned int port = 9854 + stoi(id.substr(id.length() - 1));
@@ -72,7 +73,7 @@ void CMainSimulation::Init(TConfigurationNode& t_node)
        that creation, reset, seeding and cleanup are managed by ARGoS. */
     m_pcRNG = CRandom::CreateRNG("argos");
 
-    m_uiCurrentStep = 0;
+    
     Reset();
 }
 
@@ -87,14 +88,24 @@ void CMainSimulation::ControlStep()
     int nInitSteps  = 10;
     int nTotalSteps = 400;
 
-    HandleAction();
-
+    //HandleAction();
+    
+    
     // Takeoff
-    if (m_currentAction == Action::Start && m_actionTime > 0)
+    if (m_currentAction == Action::Start)
     {
-        TakeOff();
+        bool result = TakeOff();
         m_cInitialPosition = m_pcPos->GetReading().Position;
         LOG << "ID = " << GetId() << " - " << "Taking off..." << std::endl;
+    }
+
+    if (m_currentAction == Action::ChooseAngle) {
+        m_moveAngle = ChooseAngle();
+        LOG << "Chosen angle of " << GetId() << " : " << m_moveAngle << std::endl;
+    }
+
+    if (m_currentAction == Action::Move) {
+        Move();
     }
     
     if (m_currentAction == Action::Stop && m_actionTime > 0)
@@ -102,6 +113,33 @@ void CMainSimulation::ControlStep()
         Land();
         LOG << "ID = " << GetId() << " - " << "Landing..." << std::endl;
     }
+
+    // Print current action
+    // int state;
+    // //None, Start, Stop, ChooseAngle, Move
+    // switch (m_currentAction)
+    // {
+    // case Action::None :
+    //     state = 0;
+    //     break;
+    // case Action::Start :
+    //     state = 1;
+    // case Action::Stop :
+    //     state = 2;
+    // case Action::ChooseAngle :
+    //     state = 3;
+    // case Action::Move :
+    //     state = 4;
+    // default:
+    //     break;
+    // }
+    // if (m_currentAction == Action::Start) {
+    //     LOG << "Current action: Start" << std::endl;
+    // } else if (m_currentAction == Action::ChooseAngle){
+    //     LOG << "Current action: Chose angle" << std::endl;
+    // } else if (m_currentAction == Action::Move) {
+    //     LOG << "Current action: Move" << std::endl;
+    // }
 
     // Print current position.
     LOG << "ID = " << GetId() << " - "
@@ -135,6 +173,7 @@ void CMainSimulation::ControlStep()
     {
         --m_actionTime;
     }
+    LOG << " " << std::endl;
 }
 
 /****************************************/
@@ -142,10 +181,13 @@ void CMainSimulation::ControlStep()
 
 bool CMainSimulation::TakeOff()
 {
+    float takeOffHeight = 0.5f;
     CVector3 cPos = m_pcPos->GetReading().Position;
-    if (Abs(cPos.GetZ() - 2.0f) < 0.01f)
+    if (cPos.GetZ() >= takeOffHeight - 0.01f) {
+        m_currentAction = Action::ChooseAngle;
         return false;
-    cPos.SetZ(2.0f);
+    }
+    cPos.SetZ(takeOffHeight);
     m_pcPropellers->SetAbsolutePosition(cPos);
     return true;
 }
@@ -166,7 +208,37 @@ bool CMainSimulation::Land()
 /****************************************/
 /****************************************/
 
-void CMainSimulation::Reset() {}
+// float CMainSimulation::ChooseAngle() 
+// {
+//     // Just return float between 0 and 360 for now
+//     m_currentAction = Action::Move;
+//     return (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 360.0f;
+// }
+
+CRadians CMainSimulation::ChooseAngle() 
+{
+    // Just return float between 0 and 360 for now
+    m_currentAction = Action::Move;
+    CRange<CRadians> range = CRange(CRadians::ZERO, CRadians::TWO_PI);
+    return m_pcRNG->Uniform(range);
+}
+
+/****************************************/
+/****************************************/
+
+bool CMainSimulation::Move() {
+    CVector3 cPos = m_pcPos->GetReading().Position;
+    cPos.SetX(cPos.GetX() + Cos(m_moveAngle));
+    cPos.SetY(cPos.GetY() + Sin(m_moveAngle));
+    m_pcPropellers->SetAbsolutePosition(cPos);
+    return true;
+}
+
+void CMainSimulation::Reset() {
+    m_uiCurrentStep = 0;
+    m_currentAction = Action::Start;
+    m_actionTime    = 5;
+}
 
 void CMainSimulation::Destroy() { m_server.Stop(); }
 

@@ -22,7 +22,7 @@ using simulation::Simulation;
 using simulation::MissionRequest;
 using simulation::Reply;
 
-enum class Action {None, Start, Stop};
+enum class Action {None, Start, Stop, ChooseAngle, Move};
 
 struct Command {
   std::string uri;
