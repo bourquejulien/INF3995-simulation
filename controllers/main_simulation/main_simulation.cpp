@@ -24,7 +24,7 @@ void CMainSimulation::Init(TConfigurationNode& t_node)
 {
 
     std::string id = GetId();
-    id.substr(id.length() - 1);
+    //id.substr(id.length() - 1);
     unsigned int port = 9854 + stoi(id.substr(id.length() - 1));
 
     std::string address = "0.0.0.0:" + std::to_string(port);
@@ -181,7 +181,8 @@ void CMainSimulation::ControlStep()
 
 bool CMainSimulation::TakeOff()
 {
-    float takeOffHeight = 0.5f;
+    // La hauteur des drones mysterieusement ne depasse pas 0.91
+    float takeOffHeight = 0.7f;
     CVector3 cPos = m_pcPos->GetReading().Position;
     if (cPos.GetZ() >= takeOffHeight - 0.01f) {
         m_currentAction = Action::ChooseAngle;
@@ -235,6 +236,10 @@ bool CMainSimulation::Move() {
 }
 
 void CMainSimulation::Reset() {
+    //Reset rng seed
+    m_pcRNG->SetSeed(std::time(0) + stoi(GetId().substr(GetId().length() - 1)));
+    m_pcRNG->Reset();
+
     m_uiCurrentStep = 0;
     m_currentAction = Action::Start;
     m_actionTime    = 5;
