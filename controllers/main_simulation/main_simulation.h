@@ -39,6 +39,13 @@
  */
 using namespace argos;
 
+struct DistanceReadings {
+  float front;
+  float left;
+  float back;
+  float right;
+};
+
 /*
  * A controller is simply an implementation of the CCI_Controller class.
  */
@@ -98,6 +105,16 @@ public:
      */
     bool Move();
 
+    /*
+     * This function gets the distance readings and saves them in a struct
+     */
+    void GetDistanceReadings();
+
+    /*
+     * This function determines wether the direction should be changed when close to walls
+     */
+    bool ShouldChangeDirection();
+
     void HandleAction();
 
 private:
@@ -134,6 +151,9 @@ private:
 
     /* Angle drone is currently moving at in random walk */
     CRadians m_moveAngle;
+
+    /* Readings of distance scanner */
+    DistanceReadings m_distanceReadings;
 
     SimulationServer m_server;
 };
