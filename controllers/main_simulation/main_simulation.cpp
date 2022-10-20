@@ -100,7 +100,7 @@ void CMainSimulation::ControlStep()
 
 
     if (m_currentAction == Action::ChooseAngle) {
-        m_moveAngle = ChooseAngle();
+        ChooseAngle();
     }
 
     if (m_currentAction == Action::Move) {
@@ -136,26 +136,6 @@ void CMainSimulation::ControlStep()
     LOG << "Battery level: " << sBatRead.AvailableCharge << std::endl;
 
 
-    //auto iterDistRead = sDistRead.begin();
-    
-
-    // Look here for documentation on the distance sensor:
-    // https://github.com/MISTLab/argos3/blob/inf3995/src/plugins/robots/crazyflie/control_interface/ci_crazyflie_distance_scanner_sensor.h
-    // Read distance sensor measurements
-    // CCI_CrazyflieDistanceScannerSensor::TReadingsMap sDistRead =
-    //     m_pcDistance->GetReadingsMap();
-
-    // auto iterDistRead = sDistRead.begin();
-
-    // if (sDistRead.size() == 4)
-    // {
-    //     m_distanceReadings.front = (iterDistRead++)->second;
-    //     m_distanceReadings.left = (iterDistRead++)->second;
-    //     m_distanceReadings.back = (iterDistRead++)->second;
-    //     m_distanceReadings.right = (iterDistRead++)->second;
-    // } else {
-    //     LOG << "There is a problem with the distance scanners" << std::endl;
-    // }
     
     LOG << "Front dist: " << m_distanceReadings.front << std::endl;
     LOG << "Left dist: " << m_distanceReadings.left << std::endl;
@@ -213,7 +193,7 @@ bool CMainSimulation::Land()
 //     return (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 360.0f;
 // }
 
-CRadians CMainSimulation::ChooseAngle() 
+void CMainSimulation::ChooseAngle() 
 {
     int wallsClose = 0;
     float X = 0.0f;
@@ -221,20 +201,19 @@ CRadians CMainSimulation::ChooseAngle()
 
     // If the wall is close enough, we add the inverse of the distance to a vector's coordinates. This vector then determines the range in which the new angle is chosen
     // The angle left is the positive X direction, and back the positive Y
-    float distanceThreshold = 100.0f;
-    if (0.0f <= m_distanceReadings.front && m_distanceReadings.front <= distanceThreshold) {
+    if (0.0f <= m_distanceReadings.front && m_distanceReadings.front <= m_distanceThreshold) {
         wallsClose++;
         Y += 1.0f/m_distanceReadings.front;
     }
-    if (0.0f <= m_distanceReadings.left && m_distanceReadings.left <= distanceThreshold) {
+    if (0.0f <= m_distanceReadings.left && m_distanceReadings.left <= m_distanceThreshold) {
         wallsClose++;
         X -= 1.0f/m_distanceReadings.left;
     }
-    if (0.0f <= m_distanceReadings.back && m_distanceReadings.back <= distanceThreshold){
+    if (0.0f <= m_distanceReadings.back && m_distanceReadings.back <= m_distanceThreshold){
         wallsClose++;
         Y -= 1.0f/m_distanceReadings.back;
     }
-    if (0.0f <= m_distanceReadings.right && m_distanceReadings.right <= distanceThreshold){
+    if (0.0f <= m_distanceReadings.right && m_distanceReadings.right <= m_distanceThreshold){
         wallsClose++;
         X += 1.0f/m_distanceReadings.right;
     }
@@ -250,22 +229,28 @@ CRadians CMainSimulation::ChooseAngle()
         range = CRange(rangeCenter - angleRange, rangeCenter + angleRange);
     }
 
+    m_nextPosition = m_pcPos->GetReading().Position;
 
     m_currentAction = Action::Move;
-    return m_pcRNG->Uniform(range);
+    m_moveAngle = m_pcRNG->Uniform(range);
 }
 
 /****************************************/
 /****************************************/
 
 bool CMainSimulation::Move() {
-    float speed = 0.1f;
+    float speed = 0.6f;
     CVector3 cPos = m_pcPos->GetReading().Position;
-    cPos.SetX(cPos.GetX() + Cos(m_moveAngle) * speed);
-    cPos.SetY(cPos.GetY() + Sin(m_moveAngle) * speed);
-    m_pcPropellers->SetAbsolutePosition(cPos);
-    if (ShouldChangeDirection()) {
+    if ((cPos - m_nextPosition).Length() < 0.1f) {
+        m_nextPosition.SetX(cPos.GetX() + Cos(m_moveAngle) * speed);
+        m_nextPosition.SetY(cPos.GetY() + Sin(m_moveAngle) * speed);
+    }
+
+    m_pcPropellers->SetAbsolutePosition(m_nextPosition);
+
+    if (m_actionTime <= 0 && ShouldChangeDirection()) {
         m_currentAction = Action::ChooseAngle;
+        m_actionTime = 10;
         return false;
     } else {
         return true;
@@ -277,7 +262,7 @@ void CMainSimulation::GetDistanceReadings() {
     // https://github.com/MISTLab/argos3/blob/inf3995/src/plugins/robots/crazyflie/control_interface/ci_crazyflie_distance_scanner_sensor.h
     // Read distance sensor measurements
     CCI_CrazyflieDistanceScannerSensor::TReadingsMap sDistRead =
-        m_pcDistance->GetReadingsMap(); //Ne pas utiliser GetLongReadingsMap
+        m_pcDistance->GetReadingsMap(); //Ne pas utiliser GetLongReadingsMap, ne lie rien
 
     auto iterDistRead = sDistRead.begin();
 
@@ -294,14 +279,13 @@ void CMainSimulation::GetDistanceReadings() {
 }
 
 bool CMainSimulation::ShouldChangeDirection() {
-    float distanceThreshold = 100.0f;
-    if (0.0f <= m_distanceReadings.front && m_distanceReadings.front <= distanceThreshold)
+    if (0.0f <= m_distanceReadings.front && m_distanceReadings.front <= m_distanceThreshold)
         return true;
-    if (0.0f <= m_distanceReadings.left && m_distanceReadings.left <= distanceThreshold)
+    if (0.0f <= m_distanceReadings.left && m_distanceReadings.left <= m_distanceThreshold)
         return true;
-    if (0.0f <= m_distanceReadings.back && m_distanceReadings.back <= distanceThreshold)
+    if (0.0f <= m_distanceReadings.back && m_distanceReadings.back <= m_distanceThreshold)
         return true;
-    if (0.0f <= m_distanceReadings.right && m_distanceReadings.right <= distanceThreshold)
+    if (0.0f <= m_distanceReadings.right && m_distanceReadings.right <= m_distanceThreshold)
         return true;
 
     return false;
@@ -317,6 +301,7 @@ void CMainSimulation::Reset() {
     m_currentAction = Action::Start; // TODO : change to None in final version
     m_actionTime    = 5;
     m_distanceReadings = {-2.0f, -2.0f, -2.0f, -2.0f};
+    m_distanceThreshold = 75.0f;
 }
 
 void CMainSimulation::Destroy() { m_server.Stop(); }
