@@ -39,6 +39,13 @@
  */
 using namespace argos;
 
+struct DistanceReadings {
+  float front;
+  float left;
+  float back;
+  float right;
+};
+
 /*
  * A controller is simply an implementation of the CCI_Controller class.
  */
@@ -88,6 +95,26 @@ public:
      */
     bool Land();
 
+    /*
+     * This function determines the next angle the drone will travel in
+     */
+    void ChooseAngle();
+
+    /*
+     * This function moves the drone until it meets a wall or other drone
+     */
+    bool Move();
+
+    /*
+     * This function gets the distance readings and saves them in a struct
+     */
+    void GetDistanceReadings();
+
+    /*
+     * This function determines wether the direction should be changed when close to walls
+     */
+    bool ShouldChangeDirection();
+
     void HandleAction();
 
 private:
@@ -121,6 +148,18 @@ private:
 
     /* Initial Position */
     CVector3 m_cInitialPosition;
+
+    /* Next Postion*/
+    CVector3 m_nextPosition;
+
+    /* Angle drone is currently moving at in random walk */
+    CRadians m_moveAngle;
+
+    /* Readings of distance scanner */
+    DistanceReadings m_distanceReadings;
+
+    /* How close the drone should get to the walls before changing direction */
+    float m_distanceThreshold;
 
     SimulationServer m_server;
 };
