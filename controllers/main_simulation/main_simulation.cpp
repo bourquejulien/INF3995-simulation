@@ -157,10 +157,12 @@ void CMainSimulation::ControlStep()
 
 bool CMainSimulation::TakeOff()
 {
-    // La hauteur des drones mysterieusement ne depasse pas 0.91
+    // Drone height mysteriously does not go past 0.91
     float takeOffHeight = 0.7f;
+    float takeoffPrecision = 0.01f;
+
     CVector3 cPos = m_pcPos->GetReading().Position;
-    if (cPos.GetZ() >= takeOffHeight - 0.01f) {
+    if (cPos.GetZ() >= takeOffHeight - takeoffPrecision) {
         m_currentAction = Action::ChooseAngle;
         return false;
     }
@@ -174,8 +176,9 @@ bool CMainSimulation::TakeOff()
 
 bool CMainSimulation::Land()
 {
+    float landingPrecision = 0.01f;
     CVector3 cPos = m_pcPos->GetReading().Position;
-    if (Abs(cPos.GetZ()) < 0.01f)
+    if (Abs(cPos.GetZ()) < landingPrecision)
         return false;
     cPos.SetZ(0.0f);
     m_pcPropellers->SetAbsolutePosition(cPos);
@@ -184,13 +187,6 @@ bool CMainSimulation::Land()
 
 /****************************************/
 /****************************************/
-
-// float CMainSimulation::ChooseAngle() 
-// {
-//     // Just return float between 0 and 360 for now
-//     m_currentAction = Action::Move;
-//     return (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 360.0f;
-// }
 
 void CMainSimulation::ChooseAngle() 
 {
@@ -254,9 +250,8 @@ bool CMainSimulation::Move() {
         m_currentAction = Action::ChooseAngle;
         m_actionTime = 10; // Timer is added to change direction check so a new angle isn't chosen every step when close to a wall
         return false;
-    } else {
-        return true;
     }
+    return true;
 }
 
 void CMainSimulation::GetDistanceReadings() {
