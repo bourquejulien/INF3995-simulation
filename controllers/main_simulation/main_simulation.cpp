@@ -84,7 +84,7 @@ void CMainSimulation::ControlStep()
 {
     
 
-    HandleAction(); // Comment to test takeoff backend
+    HandleAction(); // Comment to test takeoff without backend
     
     
     // Takeoff
