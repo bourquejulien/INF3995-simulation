@@ -15,7 +15,7 @@
     <system threads="0" />
     <experiment length="0"
                 ticks_per_second="20"
-                random_seed="123" />
+                random_seed="122" /> <!-- Changer manuellement le nombre pour changer la rng -->
   </framework>
 
   <!-- *************** -->
@@ -59,21 +59,16 @@
       <body position="-2.5, 0, 0" orientation="0, 0, 0" />
     </box>
 
-    <box id="pillar1" size="0.70, 0.70, 2" movable="false">
-      <body position="-1.2, -1.2, 0" orientation="0, 0, 0" />
-    </box>
-    <box id="pillar2" size="0.70, 0.70, 2" movable="false">
-      <body position="1.2, -1.2, 0" orientation="0, 0, 0" />
-    </box>
-    <box id="pillar3" size="0.70, 0.70, 2" movable="false">
-      <body position="-1.2, 1.2, 0" orientation="0, 0, 0" />
-    </box>
-    <box id="pillar4" size="0.70, 0.70, 2" movable="false">
-      <body position="1.2, 1.2, 0" orientation="0, 0, 0" />
-    </box>
+    <distribute>
+      <position method="uniform" min="-2.5,-2.5,0" max="1.7, 1.7 ,0" />
+      <orientation method="uniform" min="0,0,0" max="360,0,0" />
+      <entity quantity="5" max_trials="100">
+        <box id="pillar" size="0.3, 0.3, 2" movable="false" />
+      </entity>
+    </distribute>
 
     <distribute>
-      <position method="uniform" min="-1, -1, 0" max="1, 1, 0" />
+      <position method="uniform" min="1.8, 1.8, 0" max="2.3, 2.3, 0" />
       <orientation method="uniform" min="0, 0, 0" max="0, 0, 0" />
       <entity quantity="2" max_trials="300">
         <crazyflie id="fly">
