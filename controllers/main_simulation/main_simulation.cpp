@@ -84,7 +84,7 @@ void CMainSimulation::ControlStep()
 {
     
 
-    HandleAction();
+    HandleAction(); // Comment to test takeoff without backend
     
     
     // Takeoff
@@ -234,7 +234,7 @@ void CMainSimulation::ChooseAngle()
 /****************************************/
 
 bool CMainSimulation::Move() {
-    float speed = 0.6f;
+    float speed = 0.5f;
     CVector3 cPos = m_pcPos->GetReading().Position;
 
     // If drone is close enough to intended position, choose next position
@@ -296,10 +296,10 @@ void CMainSimulation::Reset() {
 
     m_uiCurrentStep = 0;
     //m_currentAction = Action::Start; // Comment when doing merge request
-    m_currentAction = Action::None; // Comment when testing
+    m_currentAction = Action::None; // Comment when testing without backend
     m_actionTime    = 5;
     m_distanceReadings = {-2.0f, -2.0f, -2.0f, -2.0f};
-    m_distanceThreshold = 50.0f;
+    m_distanceThreshold = 30.0f;
 }
 
 void CMainSimulation::Destroy() { m_server.Stop(); }
