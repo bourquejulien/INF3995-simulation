@@ -33,6 +33,21 @@ Status ServiceImplementation::EndMission(
     return Status::OK;
 }
 
+Status ServiceImplementation::GetPosition(
+    ServerContext* context, const MissionRequest* request, PositionReply* reply)
+{
+    reply->set_posx(dronePosition.posX);
+    reply->set_posy(dronePosition.posY);
+    reply->set_posz(dronePosition.posZ);
+    return Status::OK;
+}
+
+void ServiceImplementation::SetPosition(Position position){
+    dronePosition.posX = position.posX;
+    dronePosition.posY = position.posY;
+    dronePosition.posZ = position.posZ;
+}
+
 SimulationServer::SimulationServer() : m_service(m_queueMutex, m_queue)
 {
     grpc::EnableDefaultHealthCheckService(true);
@@ -69,6 +84,10 @@ bool SimulationServer::GetNextCommand(Command* command)
     m_queueMutex.unlock();
 
     return true;
+}
+
+void SimulationServer::SetPosition(Position position){
+    m_service.SetPosition(position);
 }
 
 void SimulationServer::Stop() { m_server->Shutdown(); }

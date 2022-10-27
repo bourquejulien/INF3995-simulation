@@ -4,6 +4,7 @@ package simulation;
 service Simulation {
   rpc StartMission (MissionRequest) returns (Reply) {}
   rpc EndMission (MissionRequest) returns (Reply) {}
+  rpc GetPosition (MissionRequest) returns (PositionReply) {}
 }
 
 message MissionRequest {
@@ -12,4 +13,10 @@ message MissionRequest {
 
 message Reply {
   string message = 1;
+}
+
+message PositionReply {
+  string posX = 1;
+  string posY = 2;
+  string posZ = 3;
 }

@@ -32,6 +32,7 @@
 #include <argos3/core/utility/math/rng.h>
 
 #include <communication/server.h>
+#include <struct/position.h>
 
 /*
  * All the ARGoS stuff in the 'argos' namespace.
@@ -89,6 +90,11 @@ public:
      * This function lifts the drone from the ground
      */
     bool TakeOff();
+
+    /**
+     * This function set the position in server
+     */ 
+    void SendPosition(Position& position);
 
     /*
      * This function returns the drone to the ground
