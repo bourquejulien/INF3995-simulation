@@ -72,6 +72,8 @@ void CMainSimulation::Init(TConfigurationNode& t_node)
     /* Create a random number generator. We use the 'argos' category so
        that creation, reset, seeding and cleanup are managed by ARGoS. */
     m_pcRNG = CRandom::CreateRNG("argos");
+    Position initialPosition;
+    SendPosition(initialPosition);
 
     // Resets the rng seed, as well as the drone's state
     Reset();
@@ -82,10 +84,8 @@ void CMainSimulation::Init(TConfigurationNode& t_node)
 
 void CMainSimulation::ControlStep()
 {
-    
 
     HandleAction(); // Comment to test takeoff without backend
-    
     
     // Takeoff
     if (m_currentAction == Action::Start)
@@ -112,6 +112,9 @@ void CMainSimulation::ControlStep()
         LOG << "ID = " << GetId() << " - " << "Landing..." << std::endl;
     }
 
+    Position newPosition;
+    SendPosition(newPosition);
+    
     // Print current action
     // if (m_currentAction == Action::Start) {
     //     LOG << "Current action: Start" << std::endl;
@@ -169,6 +172,15 @@ bool CMainSimulation::TakeOff()
     cPos.SetZ(takeOffHeight);
     m_pcPropellers->SetAbsolutePosition(cPos);
     return true;
+}
+
+void CMainSimulation::SendPosition(Position& position)
+{
+    CVector3 cPos = m_pcPos->GetReading().Position;
+    position.posX = std::to_string(cPos.GetX());
+    position.posY = std::to_string(cPos.GetY());
+    position.posZ = std::to_string(cPos.GetZ());
+    m_server.SetPosition(position);   
 }
 
 /****************************************/
