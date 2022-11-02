@@ -36,4 +36,7 @@ message DistanceObstacle {
   float back = 2;
   float left = 3;
   float right = 4;
+  float posX = 5;
+  float posY = 6;
+  float posZ = 7;
 }

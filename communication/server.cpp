@@ -6,9 +6,8 @@
 /// @param position Positions queue
 /// @param status Status queue
 /// @param distance Distances queue
-ServiceImplementation::ServiceImplementation(std::mutex& mutex, std::queue<Command>& queue,
-    std::queue<Position>& position, std::queue<std::string>& status, std::queue<DistanceReadings>& distance)
-    : m_queueMutex(mutex), m_queue(queue), m_queuePosition(position), m_queueStatus(status), m_queueDistance(distance)
+ServiceImplementation::ServiceImplementation(std::mutex& mutex, std::queue<Command>& queue, std::queue<Position>& position,std::queue<std::string>& status, std::queue<DistanceReadings>& queueDistance, std::queue<Position>& queuePositionDistance)
+    : m_queueMutex(mutex), m_queue(queue), m_queuePosition(position), m_queueStatus(status), m_queueDistance(queueDistance), m_queuePositionDistance(queuePositionDistance)
 {
 }
 
@@ -91,14 +90,19 @@ Status ServiceImplementation::GetDistances(ServerContext* context, const Mission
         for (int i = 0; i < m_queueDistance.size(); i++)
         {
             DistanceReadings distance = m_queueDistance.front();
+            Position position = m_queuePositionDistance.front();
 
             DistanceObstacle* newDistance = reply->add_distanceobstacle();
             newDistance->set_front(distance.front);
             newDistance->set_back(distance.back);
             newDistance->set_left(distance.left);
             newDistance->set_right(distance.right);
+            newDistance->set_posx(position.posX);
+            newDistance->set_posy(position.posY);
+            newDistance->set_posz(position.posZ);
 
             m_queueDistance.pop();
+            m_queuePositionDistance.pop();
         }
         m_queueMutex.unlock();
     }
@@ -120,15 +124,17 @@ void ServiceImplementation::UpdateTelemetrics(Position position, std::string sta
 
 /// @brief Update the distances queue 
 /// @param distance Distance to add to the distance queue
-void ServiceImplementation::UpdateDistances(DistanceReadings distance)
+/// @param position Position du drone
+void ServiceImplementation::UpdateDistances(DistanceReadings distance, Position position)
 {
     m_queueMutex.lock();
     m_queueDistance.push(distance);
+    m_queuePositionDistance.push(position);
     m_queueMutex.unlock();
 }
 
 /// @brief Constructor of the SimulationServer
-SimulationServer::SimulationServer() : m_service(m_queueMutex, m_queue, m_queuePosition, m_queueStatus, m_queueDistance)
+SimulationServer::SimulationServer() : m_service(m_queueMutex, m_queue, m_queuePosition, m_queueStatus, m_queueDistance, m_queuePositionDistance)
 {
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
@@ -180,8 +186,8 @@ void SimulationServer::UpdateTelemetrics(Position position, std::string status){
 
 /// @brief Update the distances in the ServiceImplementation
 /// @param distance Distance to add to the queue
-void SimulationServer::UpdateDistances(DistanceReadings distance){
-    m_service.UpdateDistances(distance);
+void SimulationServer::UpdateDistances(DistanceReadings distance, Position position){
+    m_service.UpdateDistances(distance, position);
 }
 
 /// @brief Shut down the simulation server
