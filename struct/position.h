@@ -3,9 +3,15 @@
 
 #include<string>
 struct Position{
-  std::string posX;
-  std::string posY;
-  std::string posZ;
+  float posX;
+  float posY;
+  float posZ;
+
+  Position(float x, float y, float z):
+    posX(x),
+    posY(y),
+    posZ(z)
+  {}
 };
 
 #endif

@@ -1,25 +1,40 @@
 #include "server.h"
 
+/// @brief Constructor of the ServiceImplementation class
+/// @param mutex mutex
+/// @param queue Commands queue
+/// @param position Positions queue
+/// @param status Status queue
 ServiceImplementation::ServiceImplementation(
-    std::mutex& mutex, std::queue<Command>& queue)
-    : m_queueMutex(mutex), m_queue(queue)
+    std::mutex& mutex, std::queue<Command>& queue,
+    std::queue<Position>& position,std::queue<std::string>& status)
+    : m_queueMutex(mutex), m_queue(queue), m_queuePos(position), m_queueStatus(status)
 {
 }
 
+/// @brief Put the start mission command in the commands queue
+/// @param context Server context
+/// @param request Request from the server
+/// @param reply Reply to the server
+/// @return Status of the request
 Status ServiceImplementation::StartMission(
     ServerContext* context, const MissionRequest* request, Reply* reply)
 {
     Command command = {request->uri(), Action::Start};
+    
     m_queueMutex.lock();
-
     m_queue.push(command);
-
     m_queueMutex.unlock();
 
     reply->set_message("Success");
     return Status::OK;
 }
 
+/// @brief Put the end mission command in the command queue
+/// @param context Server context
+/// @param request Request from the server
+/// @param reply Reply to the server
+/// @return Status of the request
 Status ServiceImplementation::EndMission(
     ServerContext* context, const MissionRequest* request, Reply* reply)
 {
@@ -33,27 +48,57 @@ Status ServiceImplementation::EndMission(
     return Status::OK;
 }
 
-Status ServiceImplementation::GetPosition(
-    ServerContext* context, const MissionRequest* request, PositionReply* reply)
+/// @brief Set the reply to send telemetrics to server
+/// @param context Server context
+/// @param request Request from the server
+/// @param reply Reply to the server
+/// @return Status of the request
+Status ServiceImplementation::GetTelemetrics(ServerContext* context, const MissionRequest* request, TelemetricsReply* reply)
 {
-    reply->set_posx(dronePosition.posX);
-    reply->set_posy(dronePosition.posY);
-    reply->set_posz(dronePosition.posZ);
+    if (!m_queuePosition.empty() && m_!queueStatus.empty()){
+        m_queueMutex.lock();
+        for (int i = 0; i < m_queuePosition.size())
+        {
+            *position = m_queuePosition.front();
+            *status = m_queueStatus.front();
+
+            Telemetric* telemetric = reply->add_telemetric();
+            telemetric->set_posx(position.posX);
+            telemetric->set_posy(position.posY);
+            telemetric->set_posz(position.posZ);
+            telemetric->set_status(status);
+
+            m_queuePosition.pop();
+            m_queueStatus.pop();
+        }
+        m_queueMutex.unlock();
+    }
+    while(!m_queuePosition.empty()) m_queuePosition.pop();
+    while(!m_queueStatus.empty()) m_queueStatus.pop();
+    
     return Status::OK;
 }
 
-void ServiceImplementation::SetPosition(Position position){
-    dronePosition.posX = position.posX;
-    dronePosition.posY = position.posY;
-    dronePosition.posZ = position.posZ;
+/// @brief Update the telemetric queue (position and status)
+/// @param position Position to add to the position queue
+/// @param status Status to add to the status queue
+void ServiceImplementation::UpdateTelemetrics(Position position, std::string status)
+{
+    m_queueMutex.lock();
+    m_queuePosition.push(position);
+    m_queueStatus.push(status);
+    m_queueMutex.unlock();
 }
 
+/// @brief Constructor of the SimulationServer
 SimulationServer::SimulationServer() : m_service(m_queueMutex, m_queue)
 {
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
 }
 
+/// @brief Run the simulation server
+/// @param address adress to run the server
 void SimulationServer::Run(std::string address)
 {
     ServerBuilder builder;
@@ -71,6 +116,9 @@ void SimulationServer::Run(std::string address)
     std::cout << "Server listening on " << address << std::endl;
 }
 
+/// @brief Get the next command in the commands queue
+/// @param command Command that is next in queue
+/// @return True if could find next command, False if no command next
 bool SimulationServer::GetNextCommand(Command* command)
 {
     if (m_queue.empty())
@@ -86,8 +134,12 @@ bool SimulationServer::GetNextCommand(Command* command)
     return true;
 }
 
-void SimulationServer::SetPosition(Position position){
-    m_service.SetPosition(position);
+/// @brief Update the telemetrics in the ServiceImplementation
+/// @param position position to add to the position queue
+/// @param status status to add to the status queue
+void SimulationServer::UpdateTelemetrics(Position position, std::string status){
+    m_service.UpdateTelemetrics(position, status);
 }
 
+/// @brief Shut down the simulation server
 void SimulationServer::Stop() { m_server->Shutdown(); }
