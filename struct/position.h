@@ -1,7 +1,6 @@
 #ifndef POSITION_H
 #define POSITION_H
 
-#include<string>
 struct Position{
   float posX;
   float posY;

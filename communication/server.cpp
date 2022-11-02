@@ -5,9 +5,10 @@
 /// @param queue Commands queue
 /// @param position Positions queue
 /// @param status Status queue
+/// @param distance Distances queue
 ServiceImplementation::ServiceImplementation(std::mutex& mutex, std::queue<Command>& queue,
-    std::queue<Position>& position, std::queue<std::string>& status)
-    : m_queueMutex(mutex), m_queue(queue), m_queuePosition(position), m_queueStatus(status)
+    std::queue<Position>& position, std::queue<std::string>& status, std::queue<DistanceReadings>& distance)
+    : m_queueMutex(mutex), m_queue(queue), m_queuePosition(position), m_queueStatus(status), m_queueDistance(distance)
 {
 }
 
@@ -78,6 +79,34 @@ Status ServiceImplementation::GetTelemetrics(ServerContext* context, const Missi
     return Status::OK;
 }
 
+/// @brief Set the reply to send distances to server
+/// @param context Server context
+/// @param request Request from the server
+/// @param reply Reply to the server
+/// @return Status of the request
+Status ServiceImplementation::GetDistances(ServerContext* context, const MissionRequest* request, DistancesReply* reply)
+{
+    if (!m_queueDistance.empty()){
+        m_queueMutex.lock();
+        for (int i = 0; i < m_queueDistance.size(); i++)
+        {
+            DistanceReadings distance = m_queueDistance.front();
+
+            DistanceObstacle* newDistance = reply->add_distanceobstacle();
+            newDistance->set_front(distance.front);
+            newDistance->set_back(distance.back);
+            newDistance->set_left(distance.left);
+            newDistance->set_right(distance.right);
+
+            m_queueDistance.pop();
+        }
+        m_queueMutex.unlock();
+    }
+    while(!m_queueDistance.empty()) m_queueDistance.pop();
+    
+    return Status::OK;
+}
+
 /// @brief Update the telemetric queue (position and status)
 /// @param position Position to add to the position queue
 /// @param status Status to add to the status queue
@@ -89,8 +118,17 @@ void ServiceImplementation::UpdateTelemetrics(Position position, std::string sta
     m_queueMutex.unlock();
 }
 
+/// @brief Update the distances queue 
+/// @param distance Distance to add to the distance queue
+void ServiceImplementation::UpdateDistances(DistanceReadings distance)
+{
+    m_queueMutex.lock();
+    m_queueDistance.push(distance);
+    m_queueMutex.unlock();
+}
+
 /// @brief Constructor of the SimulationServer
-SimulationServer::SimulationServer() : m_service(m_queueMutex, m_queue, m_queuePosition, m_queueStatus)
+SimulationServer::SimulationServer() : m_service(m_queueMutex, m_queue, m_queuePosition, m_queueStatus, m_queueDistance)
 {
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
@@ -138,6 +176,12 @@ bool SimulationServer::GetNextCommand(Command* command)
 /// @param status status to add to the status queue
 void SimulationServer::UpdateTelemetrics(Position position, std::string status){
     m_service.UpdateTelemetrics(position, status);
+}
+
+/// @brief Update the distances in the ServiceImplementation
+/// @param distance Distance to add to the queue
+void SimulationServer::UpdateDistances(DistanceReadings distance){
+    m_service.UpdateDistances(distance);
 }
 
 /// @brief Shut down the simulation server

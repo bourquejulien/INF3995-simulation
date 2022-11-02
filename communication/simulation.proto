@@ -5,7 +5,7 @@ service Simulation {
   rpc StartMission (MissionRequest) returns (Reply) {}
   rpc EndMission (MissionRequest) returns (Reply) {}
   rpc GetTelemetrics (MissionRequest) returns (TelemetricsReply){}
-  rpc GetDistances (MissionRequest) returns (DistanceReply){}
+  rpc GetDistances (MissionRequest) returns (DistancesReply){}
 }
 
 message MissionRequest {
@@ -27,9 +27,13 @@ message Telemetric {
   string status = 4;
 }
 
-message DistanceReply {
-  repeated float front = 1;
-  repeated float back = 2;
-  repeated float left = 3;
-  repeated float right = 4;
+message DistancesReply {
+  repeated DistanceObstacle distanceObstacle= 1;
+}
+
+message DistanceObstacle {
+  float front = 1;
+  float back = 2;
+  float left = 3;
+  float right = 4;
 }
