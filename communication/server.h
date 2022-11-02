@@ -55,10 +55,10 @@ class SimulationServer final {
     bool GetNextCommand(Command* command);
     void UpdateTelemetrics(Position position, std::string status);
   private:
-    std::mutex& m_queueMutex;
-    std::queue<Command>& m_queue;
-    std::queue<Position>& m_queuePosition;
-    std::queue<std::string>& m_queueStatus;
+    std::mutex m_queueMutex;
+    std::queue<Command> m_queue;
+    std::queue<Position> m_queuePosition;
+    std::queue<std::string> m_queueStatus;
     std::unique_ptr<Server> m_server;
     ServiceImplementation m_service;
 };

@@ -5,10 +5,9 @@
 /// @param queue Commands queue
 /// @param position Positions queue
 /// @param status Status queue
-ServiceImplementation::ServiceImplementation(
-    std::mutex& mutex, std::queue<Command>& queue,
-    std::queue<Position>& position,std::queue<std::string>& status)
-    : m_queueMutex(mutex), m_queue(queue), m_queuePos(position), m_queueStatus(status)
+ServiceImplementation::ServiceImplementation(std::mutex& mutex, std::queue<Command>& queue,
+    std::queue<Position>& position, std::queue<std::string>& status)
+    : m_queueMutex(mutex), m_queue(queue), m_queuePosition(position), m_queueStatus(status)
 {
 }
 
@@ -55,12 +54,12 @@ Status ServiceImplementation::EndMission(
 /// @return Status of the request
 Status ServiceImplementation::GetTelemetrics(ServerContext* context, const MissionRequest* request, TelemetricsReply* reply)
 {
-    if (!m_queuePosition.empty() && m_!queueStatus.empty()){
+    if (!m_queuePosition.empty() && !m_queueStatus.empty()){
         m_queueMutex.lock();
-        for (int i = 0; i < m_queuePosition.size())
+        for (int i = 0; i < m_queuePosition.size(); i++)
         {
-            *position = m_queuePosition.front();
-            *status = m_queueStatus.front();
+            Position position = m_queuePosition.front();
+            std::string status = m_queueStatus.front();
 
             Telemetric* telemetric = reply->add_telemetric();
             telemetric->set_posx(position.posX);
@@ -91,7 +90,7 @@ void ServiceImplementation::UpdateTelemetrics(Position position, std::string sta
 }
 
 /// @brief Constructor of the SimulationServer
-SimulationServer::SimulationServer() : m_service(m_queueMutex, m_queue)
+SimulationServer::SimulationServer() : m_service(m_queueMutex, m_queue, m_queuePosition, m_queueStatus)
 {
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();

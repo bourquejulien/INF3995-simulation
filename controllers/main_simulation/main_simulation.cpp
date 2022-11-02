@@ -80,7 +80,7 @@ void CMainSimulation::ControlStep()
 
     HandleAction(); // Comment to test takeoff without backend
 
-    m_server->UpdateTelemetrics(getCurrentPosition(), getCurrentStatus());
+    m_server.UpdateTelemetrics(getCurrentPosition(), getCurrentStatus());
 
     // Takeoff
     if (m_currentAction == Action::Start)
@@ -304,7 +304,7 @@ void CMainSimulation::HandleAction()
 Position CMainSimulation::getCurrentPosition()
 {
     CVector3 cPos = m_pcPos->GetReading().Position;
-    return Position(cPos.getX, cPos.getY, cPos.getZ);
+    return Position(cPos.GetX(), cPos.GetY(), cPos.GetZ());
 }
 
 /// @brief Get the current status of the drone
@@ -322,7 +322,7 @@ std::string CMainSimulation::getCurrentStatus()
     }
     else if(m_currentAction == Action::Start )
     {
-        return "START"
+        return "START";
     }
     else if(m_currentAction == Action::ChooseAngle || m_currentAction == Action::Move)
     {
