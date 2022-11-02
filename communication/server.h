@@ -25,8 +25,7 @@ using simulation::Reply;
 using simulation::TelemetricsReply;
 using simulation::Telemetric;
 
-enum class Action {None, Start, Stop, ChooseAngle, Move};
-enum class DroneStatus{Idle, Identify, Takeoff, Exploration, Landing, EmergencyStop};
+enum class Action {None, Identify, Start, Stop, ChooseAngle, Move};
 
 struct Command {
   std::string uri;

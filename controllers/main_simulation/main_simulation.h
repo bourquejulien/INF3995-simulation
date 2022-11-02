@@ -123,6 +123,10 @@ public:
 
     void HandleAction();
 
+    Position getCurrentPosition();
+
+    std::string getCurrentStatus();
+
 private:
     int m_actionTime;
 
