@@ -33,19 +33,13 @@
 
 #include <communication/server.h>
 #include <struct/position.h>
+#include <struct/distanceReadings.h>
 
 /*
  * All the ARGoS stuff in the 'argos' namespace.
  * With this statement, you save typing argos:: every time.
  */
 using namespace argos;
-
-struct DistanceReadings {
-  float front;
-  float left;
-  float back;
-  float right;
-};
 
 /*
  * A controller is simply an implementation of the CCI_Controller class.
@@ -122,6 +116,10 @@ public:
     bool ShouldChangeDirection();
 
     void HandleAction();
+
+    Position getCurrentPosition();
+
+    std::string getCurrentStatus();
 
 private:
     int m_actionTime;
