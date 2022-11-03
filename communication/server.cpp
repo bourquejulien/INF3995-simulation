@@ -1,7 +1,7 @@
 #include "server.h"
 
 /// @brief Constructor of the SimulationServer
-SimulationServer::SimulationServer() : m_service(m_queueMutex, m_command_queue, m_queueMetric, m_queueDistance, m_log_queue)
+SimulationServer::SimulationServer() : m_service(m_queue_mutex, m_queue_command, m_queue_metric, m_queue_distance, m_queue_log)
 {
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
@@ -31,43 +31,45 @@ void SimulationServer::Run(std::string address)
 /// @return True if could find next command, False if no command next
 bool SimulationServer::GetNextCommand(Command* command)
 {
-    if (m_command_queue.empty())
+    if (m_queue_command.empty())
     {
         return false;
     }
 
-    m_queueMutex.lock();
-    *command = m_command_queue.front();
-    m_command_queue.pop();
-    m_queueMutex.unlock();
+    m_queue_mutex.lock();
+    *command = m_queue_command.front();
+    m_queue_command.pop();
+    m_queue_mutex.unlock();
 
     return true;
 }
 
 /// @brief Update the telemetrics in the ServiceImplementation
-/// @param position position to add to the position queue
-/// @param status status to add to the status queue
+/// @param metric metric to add to the position queue
 void SimulationServer::UpdateTelemetrics(Metric metric)
 {
-    m_queueMutex.lock();
-    m_queueMetric.push(metric);
-    m_queueMutex.unlock();
+    m_queue_mutex.lock();
+    m_queue_metric.push(metric);
+    m_queue_mutex.unlock();
 }
 
 /// @brief Update the distances in the ServiceImplementation
 /// @param distance Distance to add to the queue
 void SimulationServer::UpdateDistances(DistanceReadings distance)
 {
-    m_queueMutex.lock();
-    m_queueDistance.push(distance);
-    m_queueMutex.unlock();
+    m_queue_mutex.lock();
+    m_queue_distance.push(distance);
+    m_queue_mutex.unlock();
 }
 
+/// @brief Update the status in the ServiceImplementation
+/// @param message Log message
+/// @param level Log level
 void SimulationServer::AddLog(std::string message, std::string level)
 {
-    m_queueMutex.lock();
-    m_log_queue.push(LogData(message, level));
-    m_queueMutex.unlock();
+    m_queue_mutex.lock();
+    m_queue_log.push(LogData(message, level));
+    m_queue_mutex.unlock();
 }
 
 /// @brief Shut down the simulation server

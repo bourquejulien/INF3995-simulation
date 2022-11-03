@@ -24,7 +24,7 @@ message Position {
 }
 
 message Telemetric {
-  string status = 1;
+  int32 status = 1;
   Position position = 2;
 }
 

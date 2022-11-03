@@ -2,12 +2,12 @@
 
 /// @brief Constructor of the ServiceImplementation class
 /// @param mutex mutex
-/// @param queue Commands queue
-/// @param position Positions queue
-/// @param status Status queue
-/// @param distance Distances queue
-ServiceImplementation::ServiceImplementation(std::mutex& mutex, std::queue<Command>& command_queue, std::queue<Metric>& queue_metric,  std::queue<DistanceReadings>& queueDistance, std::queue<LogData>& queue_log)
-    : m_queueMutex(mutex), m_command_queue(command_queue), m_queueMetric(queue_metric), m_queueDistance(queueDistance), m_log_queue(queue_log)
+/// @param command_queue Commands queue
+/// @param queue_metric Metric queue
+/// @param distance_queue Distances queue
+/// @param queue_log Logs queue
+ServiceImplementation::ServiceImplementation(std::mutex& mutex, std::queue<Command>& command_queue, std::queue<Metric>& queue_metric,  std::queue<DistanceReadings>& queue_distance, std::queue<LogData>& queue_log)
+    : m_queue_mutex(mutex), m_queue_command(command_queue), m_queue_metric(queue_metric), m_queue_distance(queue_distance), m_queue_log(queue_log)
 {
 }
 
@@ -21,9 +21,9 @@ Status ServiceImplementation::StartMission(
 {
     Command command = {request->uri(), Action::Start};
     
-    m_queueMutex.lock();
-    m_command_queue.push(command);
-    m_queueMutex.unlock();
+    m_queue_mutex.lock();
+    m_queue_command.push(command);
+    m_queue_mutex.unlock();
 
     reply->set_message("Success");
     return Status::OK;
@@ -39,9 +39,9 @@ Status ServiceImplementation::EndMission(
 {
     Command command = {request->uri(), Action::Stop};
 
-    m_queueMutex.lock();
-    m_command_queue.push(command);
-    m_queueMutex.unlock();
+    m_queue_mutex.lock();
+    m_queue_command.push(command);
+    m_queue_mutex.unlock();
 
     reply->set_message("Success");
     return Status::OK;
@@ -54,17 +54,17 @@ Status ServiceImplementation::EndMission(
 /// @return Status of the request
 Status ServiceImplementation::GetTelemetrics(ServerContext* context, const MissionRequest* request, TelemetricsReply* reply)
 {
-    if (m_queueMetric.empty()){
+    if (m_queue_metric.empty()){
         return Status::OK;
     }
 
-    m_queueMutex.lock();
+    m_queue_mutex.lock();
 
-    while (!m_queueMetric.empty())
+    while (!m_queue_metric.empty())
     {
-        Metric metric = m_queueMetric.front();
+        Metric metric = m_queue_metric.front();
         Position position = metric.position;
-        std::string status = metric.status;
+        int status = metric.status;
 
         
         Telemetric* telemetric = reply->add_telemetric();
@@ -77,10 +77,10 @@ Status ServiceImplementation::GetTelemetrics(ServerContext* context, const Missi
         telemetric->set_status(status);
         telemetric->set_allocated_position(rpc_position);
 
-        m_queueMetric.pop();
+        m_queue_metric.pop();
     }
 
-    m_queueMutex.unlock();
+    m_queue_mutex.unlock();
     
     return Status::OK;
 }
@@ -92,15 +92,15 @@ Status ServiceImplementation::GetTelemetrics(ServerContext* context, const Missi
 /// @return Status of the request
 Status ServiceImplementation::GetDistances(ServerContext* context, const MissionRequest* request, DistancesReply* reply)
 {
-    if (m_queueDistance.empty()){
+    if (m_queue_distance.empty()){
         return Status::OK;
     }
     
-    m_queueMutex.lock();
+    m_queue_mutex.lock();
 
-    while (!m_queueDistance.empty())
+    while (!m_queue_distance.empty())
     {
-        DistanceReadings distance = m_queueDistance.front();
+        DistanceReadings distance = m_queue_distance.front();
         Position position = distance.position;
 
         DistanceObstacle* newDistance = reply->add_distanceobstacle();
@@ -117,10 +117,10 @@ Status ServiceImplementation::GetDistances(ServerContext* context, const Mission
 
         newDistance->set_allocated_position(rpc_position);
 
-        m_queueDistance.pop();
+        m_queue_distance.pop();
     }
 
-    m_queueMutex.unlock();
+    m_queue_mutex.unlock();
     
     return Status::OK;
 }
@@ -132,25 +132,25 @@ Status ServiceImplementation::GetDistances(ServerContext* context, const Mission
 /// @return Status of the request
 Status ServiceImplementation::GetLogs(ServerContext* context, const MissionRequest* request, LogReply* reply)
 {
-    if (m_log_queue.empty()){
+    if (m_queue_log.empty()){
         return Status::OK;
     }
     
-    m_queueMutex.lock();
+    m_queue_mutex.lock();
 
-    while (!m_log_queue.empty())
+    while (!m_queue_log.empty())
     {
-        LogData log = m_log_queue.front();
+        LogData log = m_queue_log.front();
 
         simulation::LogData* logData = reply->add_logs();
 
         logData->set_level(log.level);
         logData->set_message(log.message);
 
-        m_queueDistance.pop();
+        m_queue_log.pop();
     }
 
-    m_queueMutex.unlock();
+    m_queue_mutex.unlock();
     
     return Status::OK;
 }

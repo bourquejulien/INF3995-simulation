@@ -37,11 +37,11 @@ class SimulationServer final {
     void UpdateDistances(DistanceReadings distance);
     void AddLog(std::string message, std::string level);
   private:
-    std::mutex m_queueMutex;
-    std::queue<Command> m_command_queue;
-    std::queue<Metric> m_queueMetric;
-    std::queue<DistanceReadings> m_queueDistance;
-    std::queue<LogData> m_log_queue;
+    std::mutex m_queue_mutex;
+    std::queue<Command> m_queue_command;
+    std::queue<Metric> m_queue_metric;
+    std::queue<DistanceReadings> m_queue_distance;
+    std::queue<LogData> m_queue_log;
     std::unique_ptr<Server> m_server;
     ServiceImplementation m_service;
 };

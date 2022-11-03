@@ -41,9 +41,9 @@ class ServiceImplementation final : public Simulation::Service {
     Status GetDistances(ServerContext* context, const MissionRequest* request, DistancesReply* reply);
     Status GetLogs(ServerContext* context, const MissionRequest* request, LogReply* reply);
   private:
-    std::mutex& m_queueMutex;
-    std::queue<Command>& m_command_queue;
-    std::queue<Metric>& m_queueMetric;
-    std::queue<DistanceReadings>& m_queueDistance;
-    std::queue<LogData>& m_log_queue;
+    std::mutex& m_queue_mutex;
+    std::queue<Command>& m_queue_command;
+    std::queue<Metric>& m_queue_metric;
+    std::queue<DistanceReadings>& m_queue_distance;
+    std::queue<LogData>& m_queue_log;
 };

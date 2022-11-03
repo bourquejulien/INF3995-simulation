@@ -7,6 +7,12 @@
 /* Logging */
 #include <argos3/core/utility/logging/argos_log.h>
 
+template<typename E>
+constexpr auto toUnderlyingType(E e) 
+{
+    return static_cast<typename std::underlying_type<E>::type>(e);
+}
+
 /****************************************/
 /****************************************/
 
@@ -252,7 +258,7 @@ void CMainSimulation::GetDistanceReadings() {
         m_distance.back = (iterDistRead++)->second;
         m_distance.right = (iterDistRead++)->second;
     } else {
-        LOG << "There is a problem with the distance scanners" << std::endl;
+        LOG << "There is a problem with the distance scanners" << "Size: " << sDistRead.size() << std::endl;
     }
 
 }
@@ -311,38 +317,11 @@ Position CMainSimulation::getCurrentPosition()
 }
 
 /// @brief Get the current status of the drone
-/// @return Status of the drone (string)
+/// @return Status of the drone (metric)
 Metric CMainSimulation::getCurrentMetric()
 {
     Position position = getCurrentPosition();
-    std::string status;
-
-    if(m_currentAction == Action::None)
-    {
-        status = "IDLE";
-    }
-    else if(m_currentAction == Action::Identify)
-    {
-        status = "IDENTIFY";
-    }
-    else if(m_currentAction == Action::Start )
-    {
-        status = "START";
-    }
-    else if(m_currentAction == Action::ChooseAngle || m_currentAction == Action::Move)
-    {
-        status = "EXPLORE";
-    } 
-    else if(m_currentAction == Action::Stop)
-    {
-        status = "STOP";
-    }
-    else
-    {
-        status = "ERROR";
-    }
-
-    return Metric(status, position);
+    return Metric(toUnderlyingType(m_currentAction), position);
 }
 
 /*

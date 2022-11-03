@@ -4,10 +4,10 @@
 #include "position.h"
 
 struct Metric{
-  std::string status;
+  int status;
   Position position;
 
-  Metric(std::string status, Position position):
+  Metric(int status, Position position):
     status(status),
     position(position)
   {}
