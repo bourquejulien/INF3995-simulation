@@ -17,7 +17,7 @@ ServiceImplementation::ServiceImplementation(std::mutex& mutex, std::queue<Comma
 /// @param reply Reply to the server
 /// @return Status of the request
 Status ServiceImplementation::StartMission(
-    ServerContext* context, const MissionRequest* request, Reply* reply)
+    ServerContext* context, const MissionRequest* request, MissionReply* reply)
 {
     Command command = {request->uri(), Action::Start};
     
@@ -35,7 +35,7 @@ Status ServiceImplementation::StartMission(
 /// @param reply Reply to the server
 /// @return Status of the request
 Status ServiceImplementation::EndMission(
-    ServerContext* context, const MissionRequest* request, Reply* reply)
+    ServerContext* context, const MissionRequest* request, MissionReply* reply)
 {
     Command command = {request->uri(), Action::Stop};
 
@@ -61,11 +61,16 @@ Status ServiceImplementation::GetTelemetrics(ServerContext* context, const Missi
             Position position = m_queuePosition.front();
             std::string status = m_queueStatus.front();
 
+            
             Telemetric* telemetric = reply->add_telemetric();
-            telemetric->set_posx(position.posX);
-            telemetric->set_posy(position.posY);
-            telemetric->set_posz(position.posZ);
+            simulation::Position* rpc_position = new simulation::Position();
+
+            rpc_position->set_x(position.posX);
+            rpc_position->set_y(position.posY);
+            rpc_position->set_z(position.posZ);
+
             telemetric->set_status(status);
+            telemetric->set_allocated_position(rpc_position);
 
             m_queuePosition.pop();
             m_queueStatus.pop();
@@ -93,13 +98,56 @@ Status ServiceImplementation::GetDistances(ServerContext* context, const Mission
             Position position = m_queuePositionDistance.front();
 
             DistanceObstacle* newDistance = reply->add_distanceobstacle();
+            simulation::Position* rpc_position = new simulation::Position();
+
+            rpc_position->set_x(position.posX);
+            rpc_position->set_y(position.posY);
+            rpc_position->set_z(position.posZ);
+
             newDistance->set_front(distance.front);
             newDistance->set_back(distance.back);
             newDistance->set_left(distance.left);
             newDistance->set_right(distance.right);
-            newDistance->set_posx(position.posX);
-            newDistance->set_posy(position.posY);
-            newDistance->set_posz(position.posZ);
+
+            newDistance->set_allocated_position(rpc_position);
+
+            m_queueDistance.pop();
+            m_queuePositionDistance.pop();
+        }
+        m_queueMutex.unlock();
+    }
+    while(!m_queueDistance.empty()) m_queueDistance.pop();
+    
+    return Status::OK;
+}
+
+/// @brief Set the reply to send distances to server
+/// @param context Server context
+/// @param request Request from the server
+/// @param reply Reply to the server
+/// @return Status of the request
+Status ServiceImplementation::GetLogs(ServerContext* context, const MissionRequest* request, LogReply* reply)
+{
+    if (!m_queueDistance.empty()){
+        m_queueMutex.lock();
+        for (int i = 0; i < m_queueDistance.size(); i++)
+        {
+            DistanceReadings distance = m_queueDistance.front();
+            Position position = m_queuePositionDistance.front();
+
+            DistanceObstacle* newDistance = reply->add_distanceobstacle();
+            simulation::Position* rpc_position = new simulation::Position();
+
+            rpc_position->set_x(position.posX);
+            rpc_position->set_y(position.posY);
+            rpc_position->set_z(position.posZ);
+
+            newDistance->set_front(distance.front);
+            newDistance->set_back(distance.back);
+            newDistance->set_left(distance.left);
+            newDistance->set_right(distance.right);
+
+            newDistance->set_allocated_position(rpc_position);
 
             m_queueDistance.pop();
             m_queuePositionDistance.pop();
