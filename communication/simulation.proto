@@ -46,9 +46,9 @@ message TelemetricsReply {
 }
 
 message DistancesReply {
-  repeated DistanceObstacle distanceObstacle= 1;
+  repeated DistanceObstacle distanceObstacle = 1;
 }
 
 message LogReply {
-  repeated LogData logs= 1;
+  repeated LogData logs = 1;
 }
