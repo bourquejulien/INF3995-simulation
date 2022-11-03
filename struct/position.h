@@ -1,5 +1,4 @@
-#ifndef POSITION_H
-#define POSITION_H
+#pragma once
 
 struct Position{
   float posX;
@@ -12,5 +11,3 @@ struct Position{
     posZ(z)
   {}
 };
-
-#endif

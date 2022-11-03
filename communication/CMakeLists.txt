@@ -69,7 +69,7 @@ target_link_libraries(hw_grpc_proto
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(simulation_server SHARED "server.h" "server.cpp")
+add_library(simulation_server SHARED "server.h" "server.cpp" "service_implementation.h" "service_implementation.cpp")
 target_link_libraries(
   simulation_server
   hw_grpc_proto
