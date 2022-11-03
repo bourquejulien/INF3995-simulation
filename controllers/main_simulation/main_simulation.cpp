@@ -10,6 +10,7 @@
 /****************************************/
 /****************************************/
 
+/// @brief Constructor of the CMainSumulation
 CMainSimulation::CMainSimulation()
     : m_pcDistance(NULL), m_pcPropellers(NULL), m_pcRNG(NULL), m_pcRABA(NULL),
       m_pcRABS(NULL), m_pcPos(NULL), m_pcBattery(NULL), m_uiCurrentStep(0),
@@ -17,9 +18,8 @@ CMainSimulation::CMainSimulation()
 {
 }
 
-/****************************************/
-/****************************************/
-
+/// @brief Initialise the sensors and start the server
+/// @param t_node 
 void CMainSimulation::Init(TConfigurationNode& t_node)
 {
 
@@ -65,28 +65,23 @@ void CMainSimulation::Init(TConfigurationNode& t_node)
                 << GetId() << "\"",
             ex);
     }
-    /*
-     * Initialize other stuff
-     */
 
     /* Create a random number generator. We use the 'argos' category so
        that creation, reset, seeding and cleanup are managed by ARGoS. */
     m_pcRNG = CRandom::CreateRNG("argos");
-    Position initialPosition;
-    SendPosition(initialPosition);
-
+    
     // Resets the rng seed, as well as the drone's state
     Reset();
 }
 
-/****************************************/
-/****************************************/
-
+/// @brief Control the steps the drone has to follow
 void CMainSimulation::ControlStep()
 {
 
     HandleAction(); // Comment to test takeoff without backend
-    
+
+    m_server.UpdateTelemetrics(getCurrentPosition(), getCurrentStatus());
+
     // Takeoff
     if (m_currentAction == Action::Start)
     {
@@ -96,7 +91,7 @@ void CMainSimulation::ControlStep()
     }
 
     GetDistanceReadings();
-
+    m_server.UpdateDistances(DistanceReadings(m_distanceReadings.front, m_distanceReadings.back, m_distanceReadings.left, m_distanceReadings.right), getCurrentPosition());
 
     if (m_currentAction == Action::ChooseAngle) {
         ChooseAngle();
@@ -111,19 +106,7 @@ void CMainSimulation::ControlStep()
         Land();
         LOG << "ID = " << GetId() << " - " << "Landing..." << std::endl;
     }
-
-    Position newPosition;
-    SendPosition(newPosition);
     
-    // Print current action
-    // if (m_currentAction == Action::Start) {
-    //     LOG << "Current action: Start" << std::endl;
-    // } else if (m_currentAction == Action::ChooseAngle){
-    //     LOG << "Current action: Chose angle" << std::endl;
-    // } else if (m_currentAction == Action::Move) {
-    //     LOG << "Current action: Move" << std::endl;
-    // }
-
     // Print current position.
     LOG << "ID = " << GetId() << " - "
         << "Position (x,y,z) = (" << m_pcPos->GetReading().Position.GetX()
@@ -137,13 +120,11 @@ void CMainSimulation::ControlStep()
     const CCI_BatterySensor::SReading& sBatRead = m_pcBattery->GetReading();
     LOG << "Battery level: " << sBatRead.AvailableCharge << std::endl;
 
-
-    
+    // Print distances
     LOG << "Front dist: " << m_distanceReadings.front << std::endl;
     LOG << "Left dist: " << m_distanceReadings.left << std::endl;
     LOG << "Back dist: " << m_distanceReadings.back << std::endl;
     LOG << "Right dist: " << m_distanceReadings.right << std::endl;
-    
 
     // Increase step counter
     m_uiCurrentStep++;
@@ -155,9 +136,8 @@ void CMainSimulation::ControlStep()
     LOG << " " << std::endl;
 }
 
-/****************************************/
-/****************************************/
-
+/// @brief Handle the Take off action
+/// @return True if action succeed, False if unsuccessful
 bool CMainSimulation::TakeOff()
 {
     // Drone height mysteriously does not go past 0.91
@@ -174,18 +154,8 @@ bool CMainSimulation::TakeOff()
     return true;
 }
 
-void CMainSimulation::SendPosition(Position& position)
-{
-    CVector3 cPos = m_pcPos->GetReading().Position;
-    position.posX = std::to_string(cPos.GetX());
-    position.posY = std::to_string(cPos.GetY());
-    position.posZ = std::to_string(cPos.GetZ());
-    m_server.SetPosition(position);   
-}
-
-/****************************************/
-/****************************************/
-
+/// @brief Handle the Land action
+/// @return True if action succeed, False if unsuccessful
 bool CMainSimulation::Land()
 {
     float landingPrecision = 0.01f;
@@ -197,9 +167,7 @@ bool CMainSimulation::Land()
     return true;
 }
 
-/****************************************/
-/****************************************/
-
+/// @brief Handle the Choose angle action
 void CMainSimulation::ChooseAngle() 
 {
     int wallsClose = 0;
@@ -242,9 +210,8 @@ void CMainSimulation::ChooseAngle()
     m_moveAngle = m_pcRNG->Uniform(range);
 }
 
-/****************************************/
-/****************************************/
-
+/// @brief Handle the Move action
+/// @return True if action succeed, False if unsuccessful
 bool CMainSimulation::Move() {
     float speed = 0.5f;
     CVector3 cPos = m_pcPos->GetReading().Position;
@@ -266,6 +233,7 @@ bool CMainSimulation::Move() {
     return true;
 }
 
+/// @brief Get the distances
 void CMainSimulation::GetDistanceReadings() {
     // Look here for documentation on the distance sensor:
     // https://github.com/MISTLab/argos3/blob/inf3995/src/plugins/robots/crazyflie/control_interface/ci_crazyflie_distance_scanner_sensor.h
@@ -287,6 +255,8 @@ void CMainSimulation::GetDistanceReadings() {
 
 }
 
+/// @brief Determine if the drone should change direction
+/// @return True if changing direction, False if not
 bool CMainSimulation::ShouldChangeDirection() {
     if (0.0f <= m_distanceReadings.front && m_distanceReadings.front <= m_distanceThreshold)
         return true;
@@ -300,6 +270,7 @@ bool CMainSimulation::ShouldChangeDirection() {
     return false;
 }
 
+/// @brief Reset the drone
 void CMainSimulation::Reset() {
 
     //Reset rng seed
@@ -314,11 +285,10 @@ void CMainSimulation::Reset() {
     m_distanceThreshold = 30.0f;
 }
 
+/// @brief Stop the server
 void CMainSimulation::Destroy() { m_server.Stop(); }
 
-/****************************************/
-/****************************************/
-
+/// @brief Determine wich action should be done by the command
 void CMainSimulation::HandleAction()
 {
     Command command;
@@ -328,6 +298,46 @@ void CMainSimulation::HandleAction()
         m_currentAction = command.action;
         m_actionTime    = 5;
     }
+}
+
+/// @brief Get the current position of the drone
+/// @return Position of the drone
+Position CMainSimulation::getCurrentPosition()
+{
+    CVector3 cPos = m_pcPos->GetReading().Position;
+    return Position(cPos.GetX(), cPos.GetY(), cPos.GetZ());
+}
+
+/// @brief Get the current status of the drone
+/// @return Status of the drone (string)
+std::string CMainSimulation::getCurrentStatus()
+{
+
+    if(m_currentAction == Action::None)
+    {
+        return "IDLE";
+    }
+    else if(m_currentAction == Action::Identify)
+    {
+        return "IDENTIFY";
+    }
+    else if(m_currentAction == Action::Start )
+    {
+        return "START";
+    }
+    else if(m_currentAction == Action::ChooseAngle || m_currentAction == Action::Move)
+    {
+        return "EXPLORE";
+    } 
+    else if(m_currentAction == Action::Stop)
+    {
+        return "STOP";
+    }
+    else
+    {
+        return "ERROR";
+    }
+
 }
 
 /*
