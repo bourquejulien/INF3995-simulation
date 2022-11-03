@@ -6,8 +6,8 @@
 /// @param position Positions queue
 /// @param status Status queue
 /// @param distance Distances queue
-ServiceImplementation::ServiceImplementation(std::mutex& mutex, std::queue<Command>& command_queue, std::queue<Metric>& queue_metric,  std::queue<DistanceReadings>& queueDistance)
-    : m_queueMutex(mutex), m_command_queue(command_queue), m_queueMetric(queue_metric), m_queueDistance(queueDistance)
+ServiceImplementation::ServiceImplementation(std::mutex& mutex, std::queue<Command>& command_queue, std::queue<Metric>& queue_metric,  std::queue<DistanceReadings>& queueDistance, std::queue<LogData>& queue_log)
+    : m_queueMutex(mutex), m_command_queue(command_queue), m_queueMetric(queue_metric), m_queueDistance(queueDistance), m_log_queue(queue_log)
 {
 }
 
@@ -125,40 +125,32 @@ Status ServiceImplementation::GetDistances(ServerContext* context, const Mission
     return Status::OK;
 }
 
-// /// @brief Set the reply to send distances to server
-// /// @param context Server context
-// /// @param request Request from the server
-// /// @param reply Reply to the server
-// /// @return Status of the request
-// Status ServiceImplementation::GetLogs(ServerContext* context, const MissionRequest* request, LogReply* reply)
-// {
-//     if (!m_queueDistance.empty()){
-//         m_queueMutex.lock();
-//         for (int i = 0; i < m_queueDistance.size(); i++)
-//         {
-//             DistanceReadings distance = m_queueDistance.front();
-//             Position position = m_queuePositionDistance.front();
-
-//             DistanceObstacle* newDistance = reply->add_distanceobstacle();
-//             simulation::Position* rpc_position = new simulation::Position();
-
-//             rpc_position->set_x(position.posX);
-//             rpc_position->set_y(position.posY);
-//             rpc_position->set_z(position.posZ);
-
-//             newDistance->set_front(distance.front);
-//             newDistance->set_back(distance.back);
-//             newDistance->set_left(distance.left);
-//             newDistance->set_right(distance.right);
-
-//             newDistance->set_allocated_position(rpc_position);
-
-//             m_queueDistance.pop();
-//             m_queuePositionDistance.pop();
-//         }
-//         m_queueMutex.unlock();
-//     }
-//     while(!m_queueDistance.empty()) m_queueDistance.pop();
+/// @brief Set the reply to send log to server
+/// @param context Server context
+/// @param request Request from the server
+/// @param reply Reply to the server
+/// @return Status of the request
+Status ServiceImplementation::GetLogs(ServerContext* context, const MissionRequest* request, LogReply* reply)
+{
+    if (m_log_queue.empty()){
+        return Status::OK;
+    }
     
-//     return Status::OK;
-// }
+    m_queueMutex.lock();
+
+    while (!m_log_queue.empty())
+    {
+        LogData log = m_log_queue.front();
+
+        simulation::LogData* logData = reply->add_logs();
+
+        logData->set_level(log.level);
+        logData->set_message(log.message);
+
+        m_queueDistance.pop();
+    }
+
+    m_queueMutex.unlock();
+    
+    return Status::OK;
+}

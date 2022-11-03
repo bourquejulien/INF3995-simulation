@@ -1,7 +1,7 @@
 #include "server.h"
 
 /// @brief Constructor of the SimulationServer
-SimulationServer::SimulationServer() : m_service(m_queueMutex, m_command_queue, m_queueMetric, m_queueDistance)
+SimulationServer::SimulationServer() : m_service(m_queueMutex, m_command_queue, m_queueMetric, m_queueDistance, m_log_queue)
 {
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
@@ -60,6 +60,13 @@ void SimulationServer::UpdateDistances(DistanceReadings distance)
 {
     m_queueMutex.lock();
     m_queueDistance.push(distance);
+    m_queueMutex.unlock();
+}
+
+void SimulationServer::AddLog(std::string message, std::string level)
+{
+    m_queueMutex.lock();
+    m_log_queue.push(LogData(message, level));
     m_queueMutex.unlock();
 }
 

@@ -88,6 +88,7 @@ void CMainSimulation::ControlStep()
         bool result = TakeOff();
         m_cInitialPosition = m_pcPos->GetReading().Position;
         LOG << "ID = " << GetId() << " - " << "Taking off..." << std::endl;
+        m_server.AddLog("Taking off", "INFO");
     }
 
     GetDistanceReadings();
@@ -105,6 +106,7 @@ void CMainSimulation::ControlStep()
     {
         Land();
         LOG << "ID = " << GetId() << " - " << "Landing..." << std::endl;
+        m_server.AddLog("Landing", "INFO");
     }
     
     // Print current position.

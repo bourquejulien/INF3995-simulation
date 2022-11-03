@@ -14,6 +14,7 @@
 
 #include "simulation.grpc.pb.h"
 #include <struct/position.h>
+#include <struct/log.h>
 #include <struct/command.h>
 #include <struct/metric.h>
 #include <struct/distance_reading.h>
@@ -34,11 +35,13 @@ class SimulationServer final {
     bool GetNextCommand(Command* command);
     void UpdateTelemetrics(Metric metric);
     void UpdateDistances(DistanceReadings distance);
+    void AddLog(std::string message, std::string level);
   private:
     std::mutex m_queueMutex;
     std::queue<Command> m_command_queue;
     std::queue<Metric> m_queueMetric;
     std::queue<DistanceReadings> m_queueDistance;
+    std::queue<LogData> m_log_queue;
     std::unique_ptr<Server> m_server;
     ServiceImplementation m_service;
 };
