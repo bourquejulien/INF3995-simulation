@@ -33,7 +33,28 @@
 
 #include <communication/server.h>
 #include <struct/position.h>
-#include <struct/distanceReadings.h>
+#include <struct/distance_reading.h>
+
+struct SensorDistance{
+  float front;
+  float back;
+  float left;
+  float right;
+
+SensorDistance():
+    front(-1.0),
+    back(-1.0),
+    left(-1.0),
+    right(-1.0)
+   {}
+
+  SensorDistance(float front, float back, float left, float right):
+    front(front),
+    back(back),
+    left(left),
+    right(right)
+   {}
+};
 
 /*
  * All the ARGoS stuff in the 'argos' namespace.
@@ -119,7 +140,7 @@ public:
 
     Position getCurrentPosition();
 
-    std::string getCurrentStatus();
+    Metric getCurrentMetric();
 
 private:
     int m_actionTime;
@@ -160,7 +181,7 @@ private:
     CRadians m_moveAngle;
 
     /* Readings of distance scanner */
-    DistanceReadings m_distanceReadings;
+    SensorDistance m_distance;
 
     /* How close the drone should get to the walls before changing direction */
     float m_distanceThreshold;

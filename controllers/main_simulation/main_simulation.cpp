@@ -7,6 +7,12 @@
 /* Logging */
 #include <argos3/core/utility/logging/argos_log.h>
 
+template<typename E>
+constexpr auto toUnderlyingType(E e) 
+{
+    return static_cast<typename std::underlying_type<E>::type>(e);
+}
+
 /****************************************/
 /****************************************/
 
@@ -80,7 +86,7 @@ void CMainSimulation::ControlStep()
 
     HandleAction(); // Comment to test takeoff without backend
 
-    m_server.UpdateTelemetrics(getCurrentPosition(), getCurrentStatus());
+    m_server.UpdateTelemetrics(getCurrentMetric());
 
     // Takeoff
     if (m_currentAction == Action::Start)
@@ -88,10 +94,11 @@ void CMainSimulation::ControlStep()
         bool result = TakeOff();
         m_cInitialPosition = m_pcPos->GetReading().Position;
         LOG << "ID = " << GetId() << " - " << "Taking off..." << std::endl;
+        m_server.AddLog("Taking off", "INFO");
     }
 
     GetDistanceReadings();
-    m_server.UpdateDistances(DistanceReadings(m_distanceReadings.front, m_distanceReadings.back, m_distanceReadings.left, m_distanceReadings.right), getCurrentPosition());
+    m_server.UpdateDistances(DistanceReadings(m_distance.front, m_distance.back, m_distance.left, m_distance.right, getCurrentPosition()));
 
     if (m_currentAction == Action::ChooseAngle) {
         ChooseAngle();
@@ -105,6 +112,7 @@ void CMainSimulation::ControlStep()
     {
         Land();
         LOG << "ID = " << GetId() << " - " << "Landing..." << std::endl;
+        m_server.AddLog("Landing", "INFO");
     }
     
     // Print current position.
@@ -121,10 +129,10 @@ void CMainSimulation::ControlStep()
     LOG << "Battery level: " << sBatRead.AvailableCharge << std::endl;
 
     // Print distances
-    LOG << "Front dist: " << m_distanceReadings.front << std::endl;
-    LOG << "Left dist: " << m_distanceReadings.left << std::endl;
-    LOG << "Back dist: " << m_distanceReadings.back << std::endl;
-    LOG << "Right dist: " << m_distanceReadings.right << std::endl;
+    LOG << "Front dist: " << m_distance.front << std::endl;
+    LOG << "Left dist: " << m_distance.left << std::endl;
+    LOG << "Back dist: " << m_distance.back << std::endl;
+    LOG << "Right dist: " << m_distance.right << std::endl;
 
     // Increase step counter
     m_uiCurrentStep++;
@@ -176,21 +184,21 @@ void CMainSimulation::ChooseAngle()
 
     // If the wall is close enough, we add the inverse of the distance to a vector's coordinates. This vector then determines the range in which the new angle is chosen
     // The left is the positive X direction, and back the positive Y
-    if (0.0f <= m_distanceReadings.front && m_distanceReadings.front <= m_distanceThreshold) {
+    if (0.0f <= m_distance.front && m_distance.front <= m_distanceThreshold) {
         wallsClose++;
-        Y += 1.0f/m_distanceReadings.front;
+        Y += 1.0f/m_distance.front;
     }
-    if (0.0f <= m_distanceReadings.left && m_distanceReadings.left <= m_distanceThreshold) {
+    if (0.0f <= m_distance.left && m_distance.left <= m_distanceThreshold) {
         wallsClose++;
-        X -= 1.0f/m_distanceReadings.left;
+        X -= 1.0f/m_distance.left;
     }
-    if (0.0f <= m_distanceReadings.back && m_distanceReadings.back <= m_distanceThreshold){
+    if (0.0f <= m_distance.back && m_distance.back <= m_distanceThreshold){
         wallsClose++;
-        Y -= 1.0f/m_distanceReadings.back;
+        Y -= 1.0f/m_distance.back;
     }
-    if (0.0f <= m_distanceReadings.right && m_distanceReadings.right <= m_distanceThreshold){
+    if (0.0f <= m_distance.right && m_distance.right <= m_distanceThreshold){
         wallsClose++;
-        X += 1.0f/m_distanceReadings.right;
+        X += 1.0f/m_distance.right;
     }
 
     CRange<CRadians> range;
@@ -245,12 +253,12 @@ void CMainSimulation::GetDistanceReadings() {
 
     if (sDistRead.size() == 4)
     {
-        m_distanceReadings.front = (iterDistRead++)->second;
-        m_distanceReadings.left = (iterDistRead++)->second;
-        m_distanceReadings.back = (iterDistRead++)->second;
-        m_distanceReadings.right = (iterDistRead++)->second;
+        m_distance.front = (iterDistRead++)->second;
+        m_distance.left = (iterDistRead++)->second;
+        m_distance.back = (iterDistRead++)->second;
+        m_distance.right = (iterDistRead++)->second;
     } else {
-        LOG << "There is a problem with the distance scanners" << std::endl;
+        LOG << "There is a problem with the distance scanners" << "Size: " << sDistRead.size() << std::endl;
     }
 
 }
@@ -258,13 +266,13 @@ void CMainSimulation::GetDistanceReadings() {
 /// @brief Determine if the drone should change direction
 /// @return True if changing direction, False if not
 bool CMainSimulation::ShouldChangeDirection() {
-    if (0.0f <= m_distanceReadings.front && m_distanceReadings.front <= m_distanceThreshold)
+    if (0.0f <= m_distance.front && m_distance.front <= m_distanceThreshold)
         return true;
-    if (0.0f <= m_distanceReadings.left && m_distanceReadings.left <= m_distanceThreshold)
+    if (0.0f <= m_distance.left && m_distance.left <= m_distanceThreshold)
         return true;
-    if (0.0f <= m_distanceReadings.back && m_distanceReadings.back <= m_distanceThreshold)
+    if (0.0f <= m_distance.back && m_distance.back <= m_distanceThreshold)
         return true;
-    if (0.0f <= m_distanceReadings.right && m_distanceReadings.right <= m_distanceThreshold)
+    if (0.0f <= m_distance.right && m_distance.right <= m_distanceThreshold)
         return true;
 
     return false;
@@ -281,7 +289,7 @@ void CMainSimulation::Reset() {
     //m_currentAction = Action::Start; // Comment when doing merge request
     m_currentAction = Action::None; // Comment when testing without backend
     m_actionTime    = 5;
-    m_distanceReadings = {-2.0f, -2.0f, -2.0f, -2.0f};
+    m_distance = SensorDistance();
     m_distanceThreshold = 30.0f;
 }
 
@@ -309,35 +317,11 @@ Position CMainSimulation::getCurrentPosition()
 }
 
 /// @brief Get the current status of the drone
-/// @return Status of the drone (string)
-std::string CMainSimulation::getCurrentStatus()
+/// @return Status of the drone (metric)
+Metric CMainSimulation::getCurrentMetric()
 {
-
-    if(m_currentAction == Action::None)
-    {
-        return "IDLE";
-    }
-    else if(m_currentAction == Action::Identify)
-    {
-        return "IDENTIFY";
-    }
-    else if(m_currentAction == Action::Start )
-    {
-        return "START";
-    }
-    else if(m_currentAction == Action::ChooseAngle || m_currentAction == Action::Move)
-    {
-        return "EXPLORE";
-    } 
-    else if(m_currentAction == Action::Stop)
-    {
-        return "STOP";
-    }
-    else
-    {
-        return "ERROR";
-    }
-
+    Position position = getCurrentPosition();
+    return Metric(toUnderlyingType(m_currentAction), position);
 }
 
 /*
