@@ -94,7 +94,6 @@ void CMainSimulation::ControlStep()
         bool result = TakeOff();
         m_cInitialPosition = m_pcPos->GetReading().Position;
         LOG << "ID = " << GetId() << " - " << "Taking off..." << std::endl;
-        m_server.AddLog("Taking off", "INFO");
     }
 
     GetDistanceReadings();
@@ -108,11 +107,13 @@ void CMainSimulation::ControlStep()
         Move();
     }
     
-    if (m_currentAction == Action::Stop && m_actionTime > 0)
+    if (m_currentAction == Action::Stop)
     {
-        Land();
+        if (!Land())
+        {
+            m_currentAction = Action::None;
+        }
         LOG << "ID = " << GetId() << " - " << "Landing..." << std::endl;
-        m_server.AddLog("Landing", "INFO");
     }
     
     // Print current position.
@@ -127,6 +128,7 @@ void CMainSimulation::ControlStep()
     // Print current battery level
     const CCI_BatterySensor::SReading& sBatRead = m_pcBattery->GetReading();
     LOG << "Battery level: " << sBatRead.AvailableCharge << std::endl;
+    LOG << "Current state: " << toUnderlyingType(m_currentAction) << std::endl;
 
     // Print distances
     LOG << "Front dist: " << m_distance.front << std::endl;
@@ -166,9 +168,9 @@ bool CMainSimulation::TakeOff()
 /// @return True if action succeed, False if unsuccessful
 bool CMainSimulation::Land()
 {
-    float landingPrecision = 0.01f;
+    argos::Real landingPrecision = 0.05;
     CVector3 cPos = m_pcPos->GetReading().Position;
-    if (Abs(cPos.GetZ()) < landingPrecision)
+    if (cPos.GetZ() < landingPrecision)
         return false;
     cPos.SetZ(0.0f);
     m_pcPropellers->SetAbsolutePosition(cPos);
@@ -211,6 +213,8 @@ void CMainSimulation::ChooseAngle()
         CRadians rangeCenter = ATan2(Y, X);
         range = CRange(rangeCenter - angleRange, rangeCenter + angleRange);
     }
+
+    m_server.AddLog("Updating position", "INFO");
 
     m_nextPosition = m_pcPos->GetReading().Position;
 
