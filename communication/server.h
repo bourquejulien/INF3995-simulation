@@ -14,44 +14,17 @@
 
 #include "simulation.grpc.pb.h"
 #include <struct/position.h>
-#include <struct/distanceReadings.h>
+#include <struct/log.h>
+#include <struct/command.h>
+#include <struct/metric.h>
+#include <struct/distance_reading.h>
+
+#include "service_implementation.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using simulation::Simulation;
-using simulation::MissionRequest;
-using simulation::Reply;
-using simulation::TelemetricsReply;
-using simulation::Telemetric;
-using simulation::DistancesReply;
-using simulation::DistanceObstacle;
-
-enum class Action {None, Identify, Start, Stop, ChooseAngle, Move};
-
-struct Command {
-  std::string uri;
-  Action action;
-};
-
-class ServiceImplementation final : public Simulation::Service {
-  public:
-    ServiceImplementation(std::mutex& mutex, std::queue<Command>& queue, std::queue<Position>& position,std::queue<std::string>& status, std::queue<DistanceReadings>& queueDistance, std::queue<Position>& queuePositionDistance);
-    Status StartMission(ServerContext* context, const MissionRequest* request, Reply* reply) override;
-    Status EndMission(ServerContext* context, const MissionRequest* request, Reply* reply) override;
-    Status GetTelemetrics(ServerContext* context, const MissionRequest* request, TelemetricsReply* reply);
-    Status GetDistances(ServerContext* context, const MissionRequest* request, DistancesReply* reply);
-    void UpdateTelemetrics(Position position, std::string status);
-    void UpdateDistances(DistanceReadings distance, Position position);
-  private:
-    std::mutex& m_queueMutex;
-    std::queue<Command>& m_queue;
-    std::queue<Position>& m_queuePosition;
-    std::queue<std::string>& m_queueStatus;
-    std::queue<DistanceReadings>& m_queueDistance;
-    std::queue<Position>& m_queuePositionDistance;
-};
 
 class SimulationServer final {
   public:
@@ -60,17 +33,15 @@ class SimulationServer final {
     void Run(std::string address);
     void Stop();
     bool GetNextCommand(Command* command);
-    void UpdateTelemetrics(Position position, std::string status);
-    void UpdateDistances(DistanceReadings distance, Position position);
+    void UpdateTelemetrics(Metric metric);
+    void UpdateDistances(DistanceReadings distance);
+    void AddLog(std::string message, std::string level);
   private:
-    std::mutex m_queueMutex;
-    std::queue<Command> m_queue;
-    std::queue<Position> m_queuePosition;
-    std::queue<std::string> m_queueStatus;
-    std::queue<DistanceReadings> m_queueDistance;
-    std::queue<Position> m_queuePositionDistance;
+    std::mutex m_queue_mutex;
+    std::queue<Command> m_queue_command;
+    std::queue<Metric> m_queue_metric;
+    std::queue<DistanceReadings> m_queue_distance;
+    std::queue<LogData> m_queue_log;
     std::unique_ptr<Server> m_server;
     ServiceImplementation m_service;
 };
-
-

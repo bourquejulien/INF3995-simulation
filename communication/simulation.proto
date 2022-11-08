@@ -2,33 +2,30 @@ syntax = "proto3";
 package simulation;
 
 service Simulation {
-  rpc StartMission (MissionRequest) returns (Reply) {}
-  rpc EndMission (MissionRequest) returns (Reply) {}
-  rpc GetTelemetrics (MissionRequest) returns (TelemetricsReply){}
-  rpc GetDistances (MissionRequest) returns (DistancesReply){}
+  rpc StartMission (MissionRequest) returns (MissionReply) {}
+  rpc EndMission (MissionRequest) returns (MissionReply) {}
+  rpc GetTelemetrics (MissionRequest) returns (TelemetricsReply) {}
+  rpc GetDistances (MissionRequest) returns (DistancesReply) {}
+  rpc GetLogs (MissionRequest) returns (LogReply) {}
 }
 
 message MissionRequest {
   string uri = 1;
 }
 
-message Reply {
+message MissionReply {
   string message = 1;
 }
 
-message TelemetricsReply {
-  repeated Telemetric telemetric = 1;
+message Position {
+  float x = 1;
+  float y = 2;
+  float z = 3;
 }
 
 message Telemetric {
-  float posX = 1;
-  float posY = 2;
-  float posZ = 3;
-  string status = 4;
-}
-
-message DistancesReply {
-  repeated DistanceObstacle distanceObstacle= 1;
+  int32 status = 1;
+  Position position = 2;
 }
 
 message DistanceObstacle {
@@ -36,7 +33,22 @@ message DistanceObstacle {
   float back = 2;
   float left = 3;
   float right = 4;
-  float posX = 5;
-  float posY = 6;
-  float posZ = 7;
+  Position position = 5;
+}
+
+message LogData {
+  string message = 1;
+  string level = 2;
+}
+
+message TelemetricsReply {
+  repeated Telemetric telemetric = 1;
+}
+
+message DistancesReply {
+  repeated DistanceObstacle distanceObstacle = 1;
+}
+
+message LogReply {
+  repeated LogData logs = 1;
 }
