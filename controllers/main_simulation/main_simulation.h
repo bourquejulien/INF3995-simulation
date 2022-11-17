@@ -127,9 +127,14 @@ public:
     bool Land();
 
     /*
-     * This function determines the next angle the drone will travel in
+     * This function determines the next perpendicular angle the drone will travel in
      */
-    void ChooseAngle();
+    void ChoosePerpendicularAngle();
+
+    /*
+     * This function determines the next random angle the drone will travel in
+     */
+    void ChooseRandomAngle();
 
     /*
      * This function moves the drone until it meets a wall or other drone

@@ -99,7 +99,7 @@ void CMainSimulation::ControlStep()
     m_server.UpdateDistances(DistanceReadings(m_distance.front, m_distance.back, m_distance.left, m_distance.right, getCurrentPosition()));
 
     if (m_currentAction == Action::ChooseAngle) {
-        ChooseAngle();
+        ChooseRandomAngle();
     }
 
     if (m_currentAction == Action::Move) {
@@ -186,9 +186,15 @@ bool CMainSimulation::Return()
     if (isCloseEnoughToIntendedPos)
     {
         LOG << "ID = " << GetId() << " - " << "Returning..." << std::endl;
-
         float speed = 0.5f;
         m_moveAngle = ATan2(m_cInitialPosition.GetY() - cPos.GetY(), m_cInitialPosition.GetX() - cPos.GetX());
+
+        bool isWallInFront = 0.0f <= m_distance.front && m_distance.front <= m_distanceThreshold;
+        if (isWallInFront) 
+        {
+            ChoosePerpendicularAngle();
+        }
+
         m_nextPosition.SetX(cPos.GetX() + Cos(m_moveAngle) * speed);
         m_nextPosition.SetY(cPos.GetY() + Sin(m_moveAngle) * speed);
         m_pcPropellers->SetAbsolutePosition(m_nextPosition);
@@ -210,8 +216,14 @@ bool CMainSimulation::Land()
     return true;
 }
 
-/// @brief Handle the Choose angle action
-void CMainSimulation::ChooseAngle() 
+/// @brief Handle the Choose perpendiculal angle action 
+void CMainSimulation::ChoosePerpendicularAngle() 
+{
+    m_moveAngle += CRadians::PI_OVER_TWO; 
+}
+
+/// @brief Handle the Choose random angle action
+void CMainSimulation::ChooseRandomAngle() 
 {
     int wallsClose = 0;
     float X = 0.0f;
