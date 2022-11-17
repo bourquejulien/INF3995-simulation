@@ -3,6 +3,7 @@
 /* Function definitions for XML parsing */
 #include <argos3/core/utility/configuration/argos_configuration.h>
 /* 2D vector definition */
+#include <argos3/core/utility/math/angles.h>
 #include <argos3/core/utility/math/vector2.h>
 /* Logging */
 #include <argos3/core/utility/logging/argos_log.h>
@@ -91,9 +92,7 @@ void CMainSimulation::ControlStep()
     // Takeoff
     if (m_currentAction == Action::Start)
     {
-        bool result = TakeOff();
-        m_cInitialPosition = m_pcPos->GetReading().Position;
-        LOG << "ID = " << GetId() << " - " << "Taking off..." << std::endl;
+        TakeOff();
     }
 
     GetDistanceReadings();
@@ -109,11 +108,13 @@ void CMainSimulation::ControlStep()
     
     if (m_currentAction == Action::Stop)
     {
-        if (!Land())
+        if(Return())
         {
-            m_currentAction = Action::None;
+            if (!Land())
+            {
+                m_currentAction = Action::None;
+            }
         }
-        LOG << "ID = " << GetId() << " - " << "Landing..." << std::endl;
     }
     
     // Print current position.
@@ -150,6 +151,10 @@ void CMainSimulation::ControlStep()
 /// @return True if action succeed, False if unsuccessful
 bool CMainSimulation::TakeOff()
 {
+    LOG << "ID = " << GetId() << " - " << "Taking off..." << std::endl;
+
+    m_cInitialPosition = m_pcPos->GetReading().Position;
+ 
     // Drone height mysteriously does not go past 0.91
     float takeOffHeight = 0.7f;
     float takeoffPrecision = 0.01f;
@@ -164,10 +169,38 @@ bool CMainSimulation::TakeOff()
     return true;
 }
 
+/// @brief Handle the return to base action 
+/// @return True if arrived to base, false if not arrived to base
+bool CMainSimulation::Return()
+{
+    CVector3 cPos = m_pcPos->GetReading().Position;
+
+    bool isAtBaseLocation = (m_cInitialPosition - cPos).Length() < 0.1f;
+    if (isAtBaseLocation) 
+    {
+        LOG << "ID = " << GetId() << " - " << "Arrived to base location..." << std::endl;
+        return true;
+    } 
+
+    bool isCloseEnoughToIntendedPos = (cPos - m_nextPosition).Length() < 0.1f;
+    if (isCloseEnoughToIntendedPos)
+    {
+        LOG << "ID = " << GetId() << " - " << "Returning..." << std::endl;
+
+        float speed = 0.5f;
+        m_moveAngle = ATan2(m_cInitialPosition.GetY() - cPos.GetY(), m_cInitialPosition.GetX() - cPos.GetX());
+        m_nextPosition.SetX(cPos.GetX() + Cos(m_moveAngle) * speed);
+        m_nextPosition.SetY(cPos.GetY() + Sin(m_moveAngle) * speed);
+        m_pcPropellers->SetAbsolutePosition(m_nextPosition);
+    }
+    return false;
+}
+
 /// @brief Handle the Land action
 /// @return True if action succeed, False if unsuccessful
 bool CMainSimulation::Land()
 {
+    LOG << "ID = " << GetId() << " - " << "Landing..." << std::endl;
     argos::Real landingPrecision = 0.05;
     CVector3 cPos = m_pcPos->GetReading().Position;
     if (cPos.GetZ() < landingPrecision)

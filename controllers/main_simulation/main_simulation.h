@@ -102,6 +102,16 @@ public:
     virtual void Destroy();
 
     /*
+     * This function starts the mission
+     */
+    bool Start();
+
+    /*
+     * This function returns the drone to the base
+     */
+    bool Return();
+
+    /*
      * This function lifts the drone from the ground
      */
     bool TakeOff();
