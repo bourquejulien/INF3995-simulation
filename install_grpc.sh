@@ -8,6 +8,7 @@ fi
 export MY_INSTALL_DIR=$PWD/build_grpc
 mkdir -p $MY_INSTALL_DIR
 export PATH="$MY_INSTALL_DIR/bin:$PATH"
+
 sudo apt install -y build-essential autoconf libtool pkg-config
 
 git clone --recurse-submodules -b v1.48.1 --depth 1 --jobs 8 --shallow-submodules https://github.com/grpc/grpc
