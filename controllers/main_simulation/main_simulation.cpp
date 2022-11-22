@@ -92,23 +92,19 @@ void CMainSimulation::ControlStep()
     // Takeoff
     if (m_currentAction == Action::Start)
     {
-        TakeOff();
+        if (!TakeOff())
+            m_currentAction = Action::Move;
     }
 
     GetDistanceReadings();
     m_server.UpdateDistances(DistanceReadings(m_distance.front, m_distance.back, m_distance.left, m_distance.right, getCurrentPosition()));
 
-    if (m_currentAction == Action::ChooseAngle) {
-        ChooseRandomAngle();
-    }
-
-    if (m_currentAction == Action::Move) {
+    if (m_currentAction == Action::Move)
         Move();
-    }
     
     if (m_currentAction == Action::Stop)
     {
-        if(Return())
+        if(!Return())
         {
             if (!Land())
             {
@@ -153,15 +149,16 @@ bool CMainSimulation::TakeOff()
 {
     LOG << "ID = " << GetId() << " - " << "Taking off..." << std::endl;
 
-    m_cInitialPosition = m_pcPos->GetReading().Position;
  
     // Drone height mysteriously does not go past 0.91
     float takeOffHeight = 0.7f;
     float takeoffPrecision = 0.01f;
 
     CVector3 cPos = m_pcPos->GetReading().Position;
-    if (cPos.GetZ() >= takeOffHeight - takeoffPrecision) {
-        m_currentAction = Action::ChooseAngle;
+    if (cPos.GetZ() >= takeOffHeight - takeoffPrecision) 
+    {
+        m_cInitialPosition = cPos;
+        ChooseRandomAngle();
         return false;
     }
     cPos.SetZ(takeOffHeight);
@@ -175,11 +172,12 @@ bool CMainSimulation::Return()
 {
     CVector3 cPos = m_pcPos->GetReading().Position;
 
-    bool isAtBaseLocation = (m_cInitialPosition - cPos).Length() < 0.1f;
+    CVector2 zeroVector = CVector2();
+    bool isAtBaseLocation = (cPos  - m_cInitialPosition).ProjectOntoXY(zeroVector).Length() < 0.1f;
     if (isAtBaseLocation) 
     {
         LOG << "ID = " << GetId() << " - " << "Arrived to base location..." << std::endl;
-        return true;
+        return false;
     } 
 
     bool isCloseEnoughToIntendedPos = (cPos - m_nextPosition).Length() < 0.1f;
@@ -187,19 +185,22 @@ bool CMainSimulation::Return()
     {
         LOG << "ID = " << GetId() << " - " << "Returning..." << std::endl;
         float speed = 0.5f;
-        m_moveAngle = ATan2(m_cInitialPosition.GetY() - cPos.GetY(), m_cInitialPosition.GetX() - cPos.GetX());
-
-        bool isWallInFront = 0.0f <= m_distance.front && m_distance.front <= m_distanceThreshold;
-        if (isWallInFront) 
-        {
-            ChoosePerpendicularAngle();
-        }
 
         m_nextPosition.SetX(cPos.GetX() + Cos(m_moveAngle) * speed);
         m_nextPosition.SetY(cPos.GetY() + Sin(m_moveAngle) * speed);
-        m_pcPropellers->SetAbsolutePosition(m_nextPosition);
     }
-    return false;
+
+    m_pcPropellers->SetAbsolutePosition(m_nextPosition);
+ 
+    if (m_actionTime <= 0 && ShouldChangeDirection()) {
+        ChooseRandomAngle();
+        m_actionTime = 10; // Timer is added to change direction check so a new angle isn't chosen every step when close to a wall
+    }
+    else {
+        m_moveAngle = ATan2(m_cInitialPosition.GetY() - cPos.GetY(), m_cInitialPosition.GetX() - cPos.GetX());
+    }
+
+    return true;
 }
 
 /// @brief Handle the Land action
@@ -214,12 +215,6 @@ bool CMainSimulation::Land()
     cPos.SetZ(0.0f);
     m_pcPropellers->SetAbsolutePosition(cPos);
     return true;
-}
-
-/// @brief Handle the Choose perpendiculal angle action 
-void CMainSimulation::ChoosePerpendicularAngle() 
-{
-    m_moveAngle += CRadians::PI_OVER_TWO; 
 }
 
 /// @brief Handle the Choose random angle action
@@ -260,10 +255,7 @@ void CMainSimulation::ChooseRandomAngle()
     }
 
     m_server.AddLog("Updating position", "INFO");
-
     m_nextPosition = m_pcPos->GetReading().Position;
-
-    m_currentAction = Action::Move;
     m_moveAngle = m_pcRNG->Uniform(range);
 }
 
@@ -283,7 +275,7 @@ bool CMainSimulation::Move() {
     m_pcPropellers->SetAbsolutePosition(m_nextPosition);
 
     if (m_actionTime <= 0 && ShouldChangeDirection()) {
-        m_currentAction = Action::ChooseAngle;
+        ChooseRandomAngle();
         m_actionTime = 10; // Timer is added to change direction check so a new angle isn't chosen every step when close to a wall
         return false;
     }
@@ -339,7 +331,7 @@ void CMainSimulation::Reset() {
     m_currentAction = Action::None; // Comment when testing without backend
     m_actionTime    = 5;
     m_distance = SensorDistance();
-    m_distanceThreshold = 30.0f;
+    m_distanceThreshold = 20.0f;
 }
 
 /// @brief Stop the server
