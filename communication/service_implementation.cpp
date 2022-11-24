@@ -47,6 +47,24 @@ Status ServiceImplementation::EndMission(
     return Status::OK;
 }
 
+/// @brief Put the return command in the command queue
+/// @param context Server context
+/// @param request Request from the server
+/// @param reply Reply to the server
+/// @return Status of the request
+Status ServiceImplementation::ReturnToBase(
+    ServerContext* context, const MissionRequest* request, MissionReply* reply)
+{
+    Command command = {request->uri(), Action::Return};
+
+    m_queue_mutex.lock();
+    m_queue_command.push(command);
+    m_queue_mutex.unlock();
+
+    reply->set_message("Success");
+    return Status::OK;
+}
+
 /// @brief Set the reply to send telemetrics to server
 /// @param context Server context
 /// @param request Request from the server

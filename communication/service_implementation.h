@@ -37,6 +37,7 @@ class ServiceImplementation final : public Simulation::Service {
     ServiceImplementation(std::mutex& mutex, std::queue<Command>& command_queue, std::queue<Metric>& queue_metric, std::queue<DistanceReadings>& queue_distance, std::queue<LogData>& queue_log);
     Status StartMission(ServerContext* context, const MissionRequest* request, MissionReply* reply) override;
     Status EndMission(ServerContext* context, const MissionRequest* request, MissionReply* reply) override;
+    Status ReturnToBase(ServerContext* context, const MissionRequest* request, MissionReply* reply) override;
     Status GetTelemetrics(ServerContext* context, const MissionRequest* request, TelemetricsReply* reply);
     Status GetDistances(ServerContext* context, const MissionRequest* request, DistancesReply* reply);
     Status GetLogs(ServerContext* context, const MissionRequest* request, LogReply* reply);

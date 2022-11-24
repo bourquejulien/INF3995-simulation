@@ -4,6 +4,7 @@ package simulation;
 service Simulation {
   rpc StartMission (MissionRequest) returns (MissionReply) {}
   rpc EndMission (MissionRequest) returns (MissionReply) {}
+  rpc ReturnToBase (MissionRequest) returns (MissionReply) {}
   rpc GetTelemetrics (MissionRequest) returns (TelemetricsReply) {}
   rpc GetDistances (MissionRequest) returns (DistancesReply) {}
   rpc GetLogs (MissionRequest) returns (LogReply) {}
