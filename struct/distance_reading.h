@@ -17,7 +17,7 @@ struct DistanceReadings{
     position(0, 0, 0)
   {}
 
-  DistanceReadings(float front, float back, float left, float right, Position Position):
+  DistanceReadings(float front, float back, float left, float right, Position position):
     front(front),
     back(back),
     left(left),
