@@ -92,15 +92,19 @@ void CMainSimulation::ControlStep()
     // Takeoff
     if (m_currentAction == Action::Start)
     {
-        if (!TakeOff())
+        if (!TakeOff()) 
+        {
             m_currentAction = Action::Move;
+        }
     }
 
     GetDistanceReadings();
     m_server.UpdateDistances(DistanceReadings(m_distance.front, m_distance.back, m_distance.left, m_distance.right, getCurrentPosition()));
 
     if (m_currentAction == Action::Move)
+    {
         Move();
+    }
     
     if (m_currentAction == Action::Stop)
     {
@@ -148,7 +152,6 @@ void CMainSimulation::ControlStep()
 bool CMainSimulation::TakeOff()
 {
     LOG << "ID = " << GetId() << " - " << "Taking off..." << std::endl;
-
  
     // Drone height mysteriously does not go past 0.91
     float takeOffHeight = 0.7f;
@@ -167,7 +170,7 @@ bool CMainSimulation::TakeOff()
 }
 
 /// @brief Handle the return to base action 
-/// @return True if arrived to base, false if not arrived to base
+/// @return False if arrived to base, True if not arrived to base
 bool CMainSimulation::Return()
 {
     CVector3 cPos = m_pcPos->GetReading().Position;
@@ -192,11 +195,13 @@ bool CMainSimulation::Return()
 
     m_pcPropellers->SetAbsolutePosition(m_nextPosition);
  
-    if (m_actionTime <= 0 && ShouldChangeDirection()) {
+    if (m_actionTime <= 0 && ShouldChangeDirection())
+    {
         ChooseRandomAngle();
         m_actionTime = 10; // Timer is added to change direction check so a new angle isn't chosen every step when close to a wall
     }
-    else {
+    else
+    {
         m_moveAngle = ATan2(m_cInitialPosition.GetY() - cPos.GetY(), m_cInitialPosition.GetX() - cPos.GetX());
     }
 
@@ -226,28 +231,35 @@ void CMainSimulation::ChooseRandomAngle()
 
     // If the wall is close enough, we add the inverse of the distance to a vector's coordinates. This vector then determines the range in which the new angle is chosen
     // The left is the positive X direction, and back the positive Y
-    if (0.0f <= m_distance.front && m_distance.front <= m_distanceThreshold) {
+    if (0.0f <= m_distance.front && m_distance.front <= m_distanceThreshold) 
+    {
         wallsClose++;
         Y += 1.0f/m_distance.front;
     }
-    if (0.0f <= m_distance.left && m_distance.left <= m_distanceThreshold) {
+    if (0.0f <= m_distance.left && m_distance.left <= m_distanceThreshold) 
+    {
         wallsClose++;
         X -= 1.0f/m_distance.left;
     }
-    if (0.0f <= m_distance.back && m_distance.back <= m_distanceThreshold){
+    if (0.0f <= m_distance.back && m_distance.back <= m_distanceThreshold)
+    {
         wallsClose++;
         Y -= 1.0f/m_distance.back;
     }
-    if (0.0f <= m_distance.right && m_distance.right <= m_distanceThreshold){
+    if (0.0f <= m_distance.right && m_distance.right <= m_distanceThreshold)
+    {
         wallsClose++;
         X += 1.0f/m_distance.right;
     }
 
     CRange<CRadians> range;
-    if (wallsClose == 0) {
+    if (wallsClose == 0)
+    {
         // If no walls are close, i.e. the drone just took off, choose a completely random direction 
         range = CRange(CRadians::ZERO, CRadians::TWO_PI);
-    } else {
+    } 
+    else 
+    {
         // Else, find the angle of the vector above
         CRadians angleRange = CRadians::PI_OVER_FOUR;
         CRadians rangeCenter = ATan2(Y, X);
@@ -267,14 +279,16 @@ bool CMainSimulation::Move() {
 
     // If drone is close enough to intended position, choose next position
     // Movement is done in steps like this so drone does not accelerate too much and clips into walls
-    if ((cPos - m_nextPosition).Length() < 0.1f) { 
+    if ((cPos - m_nextPosition).Length() < 0.1f)
+    {
         m_nextPosition.SetX(cPos.GetX() + Cos(m_moveAngle) * speed);
         m_nextPosition.SetY(cPos.GetY() + Sin(m_moveAngle) * speed);
     }
 
     m_pcPropellers->SetAbsolutePosition(m_nextPosition);
 
-    if (m_actionTime <= 0 && ShouldChangeDirection()) {
+    if (m_actionTime <= 0 && ShouldChangeDirection())
+    {
         ChooseRandomAngle();
         m_actionTime = 10; // Timer is added to change direction check so a new angle isn't chosen every step when close to a wall
         return false;
@@ -283,7 +297,8 @@ bool CMainSimulation::Move() {
 }
 
 /// @brief Get the distances
-void CMainSimulation::GetDistanceReadings() {
+void CMainSimulation::GetDistanceReadings()
+{
     // Look here for documentation on the distance sensor:
     // https://github.com/MISTLab/argos3/blob/inf3995/src/plugins/robots/crazyflie/control_interface/ci_crazyflie_distance_scanner_sensor.h
     // Read distance sensor measurements
@@ -298,7 +313,9 @@ void CMainSimulation::GetDistanceReadings() {
         m_distance.left = (iterDistRead++)->second;
         m_distance.back = (iterDistRead++)->second;
         m_distance.right = (iterDistRead++)->second;
-    } else {
+    } 
+    else 
+    {
         LOG << "There is a problem with the distance scanners" << "Size: " << sDistRead.size() << std::endl;
     }
 
@@ -306,7 +323,8 @@ void CMainSimulation::GetDistanceReadings() {
 
 /// @brief Determine if the drone should change direction
 /// @return True if changing direction, False if not
-bool CMainSimulation::ShouldChangeDirection() {
+bool CMainSimulation::ShouldChangeDirection()
+{
     if (0.0f <= m_distance.front && m_distance.front <= m_distanceThreshold)
         return true;
     if (0.0f <= m_distance.left && m_distance.left <= m_distanceThreshold)
@@ -320,7 +338,8 @@ bool CMainSimulation::ShouldChangeDirection() {
 }
 
 /// @brief Reset the drone
-void CMainSimulation::Reset() {
+void CMainSimulation::Reset()
+{
 
     //Reset rng seed
     m_pcRNG->SetSeed(std::time(0) + stoi(GetId().substr(GetId().length() - 1))); // Drone ID is taken into account so both drones have different rng
