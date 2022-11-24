@@ -84,7 +84,7 @@ void CMainSimulation::Init(TConfigurationNode& t_node)
 /// @brief Control the steps the drone has to follow
 void CMainSimulation::ControlStep()
 {
-
+    
     HandleAction(); // Comment to test takeoff without backend
 
     m_server.UpdateTelemetrics(getCurrentMetric());
@@ -99,9 +99,7 @@ void CMainSimulation::ControlStep()
     }
 
     GetDistanceReadings();
-    Position positionDistance = getCurrentPosition();
-    DistanceReadings distanceReading = DistanceReadings(m_distance.front, m_distance.back, m_distance.left, m_distance.right, positionDistance);
-    m_server.UpdateDistances(distanceReading);
+    m_server.UpdateDistances(DistanceReadings(m_distance.front, m_distance.back, m_distance.left, m_distance.right, getCurrentPosition()));
 
     if (m_currentAction == Action::Move)
     {
@@ -110,12 +108,14 @@ void CMainSimulation::ControlStep()
     
     if (m_currentAction == Action::Stop)
     {
+        Land();
+    }
+
+    if (m_currentAction == Action::Return)
+    {
         if(!Return())
         {
-            if (!Land())
-            {
-                m_currentAction = Action::None;
-            }
+            Land();
         }
     }
     
@@ -217,8 +217,13 @@ bool CMainSimulation::Land()
     LOG << "ID = " << GetId() << " - " << "Landing..." << std::endl;
     argos::Real landingPrecision = 0.05;
     CVector3 cPos = m_pcPos->GetReading().Position;
+
     if (cPos.GetZ() < landingPrecision)
+    {
+        m_currentAction = Action::None;
         return false;
+    }
+
     cPos.SetZ(0.0f);
     m_pcPropellers->SetAbsolutePosition(cPos);
     return true;
