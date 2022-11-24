@@ -97,7 +97,9 @@ void CMainSimulation::ControlStep()
     }
 
     GetDistanceReadings();
-    m_server.UpdateDistances(DistanceReadings(m_distance.front, m_distance.back, m_distance.left, m_distance.right, getCurrentPosition()));
+    Position positionDistance = getCurrentPosition();
+    DistanceReadings distanceReading = DistanceReadings(m_distance.front, m_distance.back, m_distance.left, m_distance.right, positionDistance);
+    m_server.UpdateDistances(distanceReading);
 
     if (m_currentAction == Action::ChooseAngle) {
         ChooseAngle();
