@@ -102,6 +102,16 @@ public:
     virtual void Destroy();
 
     /*
+     * This function starts the mission
+     */
+    bool Start();
+
+    /*
+     * This function returns the drone to the base
+     */
+    bool Return();
+
+    /*
      * This function lifts the drone from the ground
      */
     bool TakeOff();
@@ -117,9 +127,9 @@ public:
     bool Land();
 
     /*
-     * This function determines the next angle the drone will travel in
+     * This function determines the next random angle the drone will travel in
      */
-    void ChooseAngle();
+    void ChooseRandomAngle();
 
     /*
      * This function moves the drone until it meets a wall or other drone
