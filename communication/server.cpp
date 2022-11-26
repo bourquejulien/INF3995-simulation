@@ -31,7 +31,7 @@ void SimulationServer::Run(std::string address)
 /// @return True if could find next command, False if no command next
 bool SimulationServer::GetNextCommand(Command* command)
 {
-    if (m_queue_command.empty())
+    if (m_queue_command.empty() || m_queue_command.front().action == Action::Done)
     {
         return false;
     }
@@ -42,6 +42,16 @@ bool SimulationServer::GetNextCommand(Command* command)
     m_queue_mutex.unlock();
 
     return true;
+}
+
+/// @brief Mark that a given uri is done with its command execution
+/// @param uri Uri that is done
+void SimulationServer::SendDoneCommand(std::string uri)
+{
+    Command doneCommand = {uri, Action::Done};
+    m_queue_mutex.lock();
+    m_queue_command.push(doneCommand);
+    m_queue_mutex.unlock();
 }
 
 /// @brief Update the telemetrics in the ServiceImplementation

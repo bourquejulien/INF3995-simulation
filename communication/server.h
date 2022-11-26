@@ -33,6 +33,7 @@ class SimulationServer final {
     void Run(std::string address);
     void Stop();
     bool GetNextCommand(Command* command);
+    void SendDoneCommand(std::string uri);
     void UpdateTelemetrics(Metric metric);
     void UpdateDistances(DistanceReadings distance);
     void AddLog(std::string message, std::string level);

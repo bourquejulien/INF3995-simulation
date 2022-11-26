@@ -61,6 +61,19 @@ Status ServiceImplementation::ReturnToBase(
     m_queue_command.push(command);
     m_queue_mutex.unlock();
 
+    bool inProgress = true;
+    while(inProgress)
+    {
+        m_queue_mutex.lock();
+        Command lastCommand = m_queue_command.front();
+        if(lastCommand.uri == request->uri() && lastCommand.action == Action::Done)
+        {
+            m_queue_command.pop();
+            inProgress = false;
+        }
+        m_queue_mutex.unlock();
+    }
+
     reply->set_message("Success");
     return Status::OK;
 }
