@@ -110,7 +110,7 @@ void CMainSimulation::ControlStep()
     {
         if (!Land())
         {
-            m_server.SendDoneCommand(GetId());
+            m_server.SendDone();
         }
     }
 
@@ -120,7 +120,7 @@ void CMainSimulation::ControlStep()
         {
             if (!Land())
             {
-                m_server.SendDoneCommand(GetId());
+                m_server.SendDone();
             }
         }
     }
