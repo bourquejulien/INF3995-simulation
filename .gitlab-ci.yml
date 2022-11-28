@@ -5,6 +5,7 @@ before_script:
 
 stages:
     - build
+    - lint
     - push
 
 build:
@@ -14,6 +15,16 @@ build:
             - merge_requests
     script:
         - docker build .
+
+lint:
+    stage: lint
+    allow_failure: true
+    only:
+        refs:
+            - merge_requests
+    script:
+        - docker build --target=lint -t="simulation-lint-$CI_COMMIT_SHORT_SHA" .
+        - docker run "simulation-lint-$CI_COMMIT_SHORT_SHA"
 
 push:
     stage: push
