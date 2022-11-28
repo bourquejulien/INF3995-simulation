@@ -1,7 +1,7 @@
 #include "server.h"
 
 /// @brief Constructor of the SimulationServer
-SimulationServer::SimulationServer() : m_service(m_queue_mutex, m_queue_command, m_queue_metric, m_queue_distance, m_queue_log)
+SimulationServer::SimulationServer() : m_service(m_queue_mutex, m_queue_command, m_queue_done, m_queue_metric, m_queue_distance, m_queue_log)
 {
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
@@ -31,7 +31,7 @@ void SimulationServer::Run(std::string address)
 /// @return True if could find next command, False if no command next
 bool SimulationServer::GetNextCommand(Command* command)
 {
-    if (m_queue_command.empty() || m_queue_command.front().action == Action::Done)
+    if (m_queue_command.empty())
     {
         return false;
     }
@@ -46,11 +46,10 @@ bool SimulationServer::GetNextCommand(Command* command)
 
 /// @brief Mark that a given uri is done with its command execution
 /// @param uri Uri that is done
-void SimulationServer::SendDoneCommand(std::string uri)
+void SimulationServer::SendDone()
 {
-    Command doneCommand = {uri, Action::Done};
     m_queue_mutex.lock();
-    m_queue_command.push(doneCommand);
+    m_queue_done.push(true);
     m_queue_mutex.unlock();
 }
 

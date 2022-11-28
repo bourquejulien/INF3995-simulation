@@ -5,6 +5,7 @@
 #include <string>
 #include <thread>
 #include <mutex>
+#include <chrono>
 #include <queue>
 
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
@@ -34,7 +35,7 @@ using grpc::Status;
 
 class ServiceImplementation final : public Simulation::Service {
   public:
-    ServiceImplementation(std::mutex& mutex, std::queue<Command>& command_queue, std::queue<Metric>& queue_metric, std::queue<DistanceReadings>& queue_distance, std::queue<LogData>& queue_log);
+    ServiceImplementation(std::mutex& mutex, std::queue<Command>& command_queue, std::queue<bool>& done_queue, std::queue<Metric>& queue_metric, std::queue<DistanceReadings>& queue_distance, std::queue<LogData>& queue_log);
     Status StartMission(ServerContext* context, const MissionRequest* request, MissionReply* reply) override;
     Status EndMission(ServerContext* context, const MissionRequest* request, MissionReply* reply) override;
     Status ReturnToBase(ServerContext* context, const MissionRequest* request, MissionReply* reply) override;
@@ -44,6 +45,7 @@ class ServiceImplementation final : public Simulation::Service {
   private:
     std::mutex& m_queue_mutex;
     std::queue<Command>& m_queue_command;
+    std::queue<bool>& m_queue_done;
     std::queue<Metric>& m_queue_metric;
     std::queue<DistanceReadings>& m_queue_distance;
     std::queue<LogData>& m_queue_log;
