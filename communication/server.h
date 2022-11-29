@@ -33,12 +33,14 @@ class SimulationServer final {
     void Run(std::string address);
     void Stop();
     bool GetNextCommand(Command* command);
+    void SendDone();
     void UpdateTelemetrics(Metric metric);
     void UpdateDistances(DistanceReadings distance);
     void AddLog(std::string message, std::string level);
   private:
     std::mutex m_queue_mutex;
     std::queue<Command> m_queue_command;
+    std::queue<bool> m_queue_done;
     std::queue<Metric> m_queue_metric;
     std::queue<DistanceReadings> m_queue_distance;
     std::queue<LogData> m_queue_log;

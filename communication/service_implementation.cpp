@@ -6,8 +6,8 @@
 /// @param queue_metric Metric queue
 /// @param distance_queue Distances queue
 /// @param queue_log Logs queue
-ServiceImplementation::ServiceImplementation(std::mutex& mutex, std::queue<Command>& command_queue, std::queue<Metric>& queue_metric,  std::queue<DistanceReadings>& queue_distance, std::queue<LogData>& queue_log)
-    : m_queue_mutex(mutex), m_queue_command(command_queue), m_queue_metric(queue_metric), m_queue_distance(queue_distance), m_queue_log(queue_log)
+ServiceImplementation::ServiceImplementation(std::mutex& mutex, std::queue<Command>& command_queue, std::queue<bool>& done_queue, std::queue<Metric>& queue_metric,  std::queue<DistanceReadings>& queue_distance, std::queue<LogData>& queue_log)
+    : m_queue_mutex(mutex), m_queue_command(command_queue), m_queue_done(done_queue), m_queue_metric(queue_metric), m_queue_distance(queue_distance), m_queue_log(queue_log)
 {
 }
 
@@ -42,6 +42,41 @@ Status ServiceImplementation::EndMission(
     m_queue_mutex.lock();
     m_queue_command.push(command);
     m_queue_mutex.unlock();
+
+    reply->set_message("Success");
+    return Status::OK;
+}
+
+/// @brief Put the return command in the command queue
+/// @param context Server context
+/// @param request Request from the server
+/// @param reply Reply to the server
+/// @return Status of the request
+Status ServiceImplementation::ReturnToBase(
+    ServerContext* context, const MissionRequest* request, MissionReply* reply)
+{
+    std::cout << "starting" << std::endl;
+    Command command = {request->uri(), Action::Return};
+
+    m_queue_mutex.lock();
+    m_queue_command.push(command);
+    m_queue_mutex.unlock();
+
+    bool inProgress = true;
+    const int WAIT_INTERVAL = 1000;
+    while(inProgress)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_INTERVAL));
+        m_queue_mutex.lock();
+        
+        if(!m_queue_done.empty())
+        {
+            m_queue_done.pop();
+            inProgress = false;
+        }
+
+        m_queue_mutex.unlock();
+    }
 
     reply->set_message("Success");
     return Status::OK;

@@ -1,6 +1,6 @@
 #pragma once
 
-enum class Action {None, Identify, Start, Move, Stop, EmergencyStop, ChooseAngle};
+enum class Action {None, Identify, Start, Move, Stop, EmergencyStop, Return, ChooseAngle};
 
 struct Command {
   std::string uri;
