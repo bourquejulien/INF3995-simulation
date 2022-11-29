@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim as build
+FROM debian:bullseye-slim as base
 LABEL argos-example.version="0.1"
 
 # Install common dependencies
@@ -10,6 +10,8 @@ RUN apt update && apt install -y \
     pkg-config \
     software-properties-common \
     && rm -rf /var/lib/apt/lists/*
+
+FROM base AS build
 
 # Install ARGoS dependencies
 RUN apt update && apt install -y \
@@ -93,3 +95,13 @@ RUN mkdir -p build && cd build &&\
 
 ENTRYPOINT [ "bash", "/root/examples/startup.sh" ]
 CMD [ "main_simulation.argos" ]
+
+FROM base as lint
+
+RUN apt update && apt install -y clang-format
+
+WORKDIR /root/lint
+COPY . .
+
+ENTRYPOINT [ "bash", "format.sh" ]
+
