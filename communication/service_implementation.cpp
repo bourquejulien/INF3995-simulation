@@ -63,9 +63,10 @@ Status ServiceImplementation::ReturnToBase(
     m_queue_mutex.unlock();
 
     bool inProgress = true;
+    const int WAIT_INTERVAL = 1000;
     while(inProgress)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_INTERVAL));
         m_queue_mutex.lock();
         
         if(!m_queue_done.empty())

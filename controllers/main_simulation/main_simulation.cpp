@@ -108,10 +108,7 @@ void CMainSimulation::ControlStep()
     
     if (m_currentAction == Action::Stop)
     {
-        if (!Land())
-        {
-            m_server.SendDone();
-        }
+        Land();
     }
 
     if (m_currentAction == Action::Return)
