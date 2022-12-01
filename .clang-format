@@ -3,8 +3,6 @@ BasedOnStyle: LLVM
 AccessModifierOffset: -4
 AlignAfterOpenBracket: AlwaysBreak
 BreakBeforeBraces: Allman
-AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: true
 AlwaysBreakTemplateDeclarations: Yes
 IndentPPDirectives: AfterHash
 IndentWidth: 4

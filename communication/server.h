@@ -1,23 +1,22 @@
 #pragma once
 
-
 #include <iostream>
 #include <memory>
-#include <string>
-#include <thread>
 #include <mutex>
 #include <queue>
+#include <string>
+#include <thread>
 
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 
 #include "simulation.grpc.pb.h"
-#include <struct/position.h>
-#include <struct/log.h>
 #include <struct/command.h>
-#include <struct/metric.h>
 #include <struct/distance_reading.h>
+#include <struct/log.h>
+#include <struct/metric.h>
+#include <struct/position.h>
 
 #include "service_implementation.h"
 
@@ -26,8 +25,9 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-class SimulationServer final {
-  public:
+class SimulationServer final
+{
+public:
     SimulationServer();
     virtual ~SimulationServer() {}
     void Run(std::string address);
@@ -37,7 +37,8 @@ class SimulationServer final {
     void UpdateTelemetrics(Metric metric);
     void UpdateDistances(DistanceReadings distance);
     void AddLog(std::string message, std::string level);
-  private:
+
+private:
     std::mutex m_queue_mutex;
     std::queue<Command> m_queue_command;
     std::queue<bool> m_queue_done;
