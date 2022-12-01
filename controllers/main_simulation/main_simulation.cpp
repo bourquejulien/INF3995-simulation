@@ -8,8 +8,8 @@
 /* Logging */
 #include <argos3/core/utility/logging/argos_log.h>
 
-template<typename E>
-constexpr auto toUnderlyingType(E e) 
+template <typename E>
+constexpr auto toUnderlyingType(E e)
 {
     return static_cast<typename std::underlying_type<E>::type>(e);
 }
@@ -26,10 +26,9 @@ CMainSimulation::CMainSimulation()
 }
 
 /// @brief Initialise the sensors and start the server
-/// @param t_node 
+/// @param t_node
 void CMainSimulation::Init(TConfigurationNode& t_node)
 {
-
     std::string id = GetId();
     unsigned int port = 9854 + stoi(id.substr(id.length() - 1));
 
@@ -76,7 +75,7 @@ void CMainSimulation::Init(TConfigurationNode& t_node)
     /* Create a random number generator. We use the 'argos' category so
        that creation, reset, seeding and cleanup are managed by ARGoS. */
     m_pcRNG = CRandom::CreateRNG("argos");
-    
+
     // Resets the rng seed, as well as the drone's state
     Reset();
 }
@@ -84,7 +83,6 @@ void CMainSimulation::Init(TConfigurationNode& t_node)
 /// @brief Control the steps the drone has to follow
 void CMainSimulation::ControlStep()
 {
-    
     HandleAction(); // Comment to test takeoff without backend
 
     m_server.UpdateTelemetrics(getCurrentMetric());
@@ -92,20 +90,22 @@ void CMainSimulation::ControlStep()
     // Takeoff
     if (m_currentAction == Action::Start)
     {
-        if (!TakeOff()) 
+        if (!TakeOff())
         {
             m_currentAction = Action::Move;
         }
     }
 
     GetDistanceReadings();
-    m_server.UpdateDistances(DistanceReadings(m_distance.front, m_distance.back, m_distance.left, m_distance.right, getCurrentPosition()));
+    m_server.UpdateDistances(DistanceReadings(
+        m_distance.front, m_distance.back, m_distance.left, m_distance.right,
+        getCurrentPosition()));
 
     if (m_currentAction == Action::Move)
     {
         Move();
     }
-    
+
     if (m_currentAction == Action::Stop)
     {
         Land();
@@ -113,7 +113,7 @@ void CMainSimulation::ControlStep()
 
     if (m_currentAction == Action::Return)
     {
-        if(!Return())
+        if (!Return())
         {
             if (!Land())
             {
@@ -121,7 +121,7 @@ void CMainSimulation::ControlStep()
             }
         }
     }
-    
+
     // Print current position.
     LOG << "ID = " << GetId() << " - "
         << "Position (x,y,z) = (" << m_pcPos->GetReading().Position.GetX()
@@ -129,7 +129,8 @@ void CMainSimulation::ControlStep()
         << m_pcPos->GetReading().Position.GetZ() << ")" << std::endl;
 
     // Print angle of movement
-    LOG << "Current angle : " << m_moveAngle.GetValue() * CRadians::RADIANS_TO_DEGREES << std::endl;
+    LOG << "Current angle : "
+        << m_moveAngle.GetValue() * CRadians::RADIANS_TO_DEGREES << std::endl;
 
     // Print current battery level
     const CCI_BatterySensor::SReading& sBatRead = m_pcBattery->GetReading();
@@ -156,14 +157,15 @@ void CMainSimulation::ControlStep()
 /// @return True if action succeed, False if unsuccessful
 bool CMainSimulation::TakeOff()
 {
-    LOG << "ID = " << GetId() << " - " << "Taking off..." << std::endl;
- 
+    LOG << "ID = " << GetId() << " - "
+        << "Taking off..." << std::endl;
+
     // Drone height mysteriously does not go past 0.91
     float takeOffHeight = 0.7f;
     float takeoffPrecision = 0.01f;
 
     CVector3 cPos = m_pcPos->GetReading().Position;
-    if (cPos.GetZ() >= takeOffHeight - takeoffPrecision) 
+    if (cPos.GetZ() >= takeOffHeight - takeoffPrecision)
     {
         m_cInitialPosition = cPos;
         ChooseRandomAngle();
@@ -174,24 +176,27 @@ bool CMainSimulation::TakeOff()
     return true;
 }
 
-/// @brief Handle the return to base action 
+/// @brief Handle the return to base action
 /// @return False if arrived to base, True if not arrived to base
 bool CMainSimulation::Return()
 {
     CVector3 cPos = m_pcPos->GetReading().Position;
 
     CVector2 zeroVector = CVector2();
-    bool isAtBaseLocation = (cPos  - m_cInitialPosition).ProjectOntoXY(zeroVector).Length() < 0.1f;
-    if (isAtBaseLocation) 
+    bool isAtBaseLocation =
+        (cPos - m_cInitialPosition).ProjectOntoXY(zeroVector).Length() < 0.1f;
+    if (isAtBaseLocation)
     {
-        LOG << "ID = " << GetId() << " - " << "Arrived to base location..." << std::endl;
+        LOG << "ID = " << GetId() << " - "
+            << "Arrived to base location..." << std::endl;
         return false;
-    } 
+    }
 
     bool isCloseEnoughToIntendedPos = (cPos - m_nextPosition).Length() < 0.1f;
     if (isCloseEnoughToIntendedPos)
     {
-        LOG << "ID = " << GetId() << " - " << "Returning..." << std::endl;
+        LOG << "ID = " << GetId() << " - "
+            << "Returning..." << std::endl;
         float speed = 0.5f;
 
         m_nextPosition.SetX(cPos.GetX() + Cos(m_moveAngle) * speed);
@@ -199,15 +204,18 @@ bool CMainSimulation::Return()
     }
 
     m_pcPropellers->SetAbsolutePosition(m_nextPosition);
- 
+
     if (m_actionTime <= 0 && ShouldChangeDirection())
     {
         ChooseRandomAngle();
-        m_actionTime = 10; // Timer is added to change direction check so a new angle isn't chosen every step when close to a wall
+        m_actionTime = 10; // Timer is added to change direction check so a new
+                           // angle isn't chosen every step when close to a wall
     }
     else
     {
-        m_moveAngle = ATan2(m_cInitialPosition.GetY() - cPos.GetY(), m_cInitialPosition.GetX() - cPos.GetX());
+        m_moveAngle = ATan2(
+            m_cInitialPosition.GetY() - cPos.GetY(),
+            m_cInitialPosition.GetX() - cPos.GetX());
     }
 
     return true;
@@ -217,7 +225,8 @@ bool CMainSimulation::Return()
 /// @return True if action succeed, False if unsuccessful
 bool CMainSimulation::Land()
 {
-    LOG << "ID = " << GetId() << " - " << "Landing..." << std::endl;
+    LOG << "ID = " << GetId() << " - "
+        << "Landing..." << std::endl;
     argos::Real landingPrecision = 0.05;
     CVector3 cPos = m_pcPos->GetReading().Position;
 
@@ -233,42 +242,45 @@ bool CMainSimulation::Land()
 }
 
 /// @brief Handle the Choose random angle action
-void CMainSimulation::ChooseRandomAngle() 
+void CMainSimulation::ChooseRandomAngle()
 {
     int wallsClose = 0;
     float X = 0.0f;
     float Y = 0.0f;
 
-    // If the wall is close enough, we add the inverse of the distance to a vector's coordinates. This vector then determines the range in which the new angle is chosen
-    // The left is the positive X direction, and back the positive Y
-    if (0.0f <= m_distance.front && m_distance.front <= m_distanceThreshold) 
+    // If the wall is close enough, we add the inverse of the distance to a
+    // vector's coordinates. This vector then determines the range in which the
+    // new angle is chosen The left is the positive X direction, and back the
+    // positive Y
+    if (0.0f <= m_distance.front && m_distance.front <= m_distanceThreshold)
     {
         wallsClose++;
-        Y += 1.0f/m_distance.front;
+        Y += 1.0f / m_distance.front;
     }
-    if (0.0f <= m_distance.left && m_distance.left <= m_distanceThreshold) 
+    if (0.0f <= m_distance.left && m_distance.left <= m_distanceThreshold)
     {
         wallsClose++;
-        X -= 1.0f/m_distance.left;
+        X -= 1.0f / m_distance.left;
     }
     if (0.0f <= m_distance.back && m_distance.back <= m_distanceThreshold)
     {
         wallsClose++;
-        Y -= 1.0f/m_distance.back;
+        Y -= 1.0f / m_distance.back;
     }
     if (0.0f <= m_distance.right && m_distance.right <= m_distanceThreshold)
     {
         wallsClose++;
-        X += 1.0f/m_distance.right;
+        X += 1.0f / m_distance.right;
     }
 
     CRange<CRadians> range;
     if (wallsClose == 0)
     {
-        // If no walls are close, i.e. the drone just took off, choose a completely random direction 
+        // If no walls are close, i.e. the drone just took off, choose a
+        // completely random direction
         range = CRange(CRadians::ZERO, CRadians::TWO_PI);
-    } 
-    else 
+    }
+    else
     {
         // Else, find the angle of the vector above
         CRadians angleRange = CRadians::PI_OVER_FOUR;
@@ -283,12 +295,14 @@ void CMainSimulation::ChooseRandomAngle()
 
 /// @brief Handle the Move action
 /// @return True if action succeed, False if unsuccessful
-bool CMainSimulation::Move() {
+bool CMainSimulation::Move()
+{
     float speed = 0.5f;
     CVector3 cPos = m_pcPos->GetReading().Position;
 
     // If drone is close enough to intended position, choose next position
-    // Movement is done in steps like this so drone does not accelerate too much and clips into walls
+    // Movement is done in steps like this so drone does not accelerate too much
+    // and clips into walls
     if ((cPos - m_nextPosition).Length() < 0.1f)
     {
         m_nextPosition.SetX(cPos.GetX() + Cos(m_moveAngle) * speed);
@@ -300,7 +314,8 @@ bool CMainSimulation::Move() {
     if (m_actionTime <= 0 && ShouldChangeDirection())
     {
         ChooseRandomAngle();
-        m_actionTime = 10; // Timer is added to change direction check so a new angle isn't chosen every step when close to a wall
+        m_actionTime = 10; // Timer is added to change direction check so a new
+                           // angle isn't chosen every step when close to a wall
         return false;
     }
     return true;
@@ -313,7 +328,8 @@ void CMainSimulation::GetDistanceReadings()
     // https://github.com/MISTLab/argos3/blob/inf3995/src/plugins/robots/crazyflie/control_interface/ci_crazyflie_distance_scanner_sensor.h
     // Read distance sensor measurements
     CCI_CrazyflieDistanceScannerSensor::TReadingsMap sDistRead =
-        m_pcDistance->GetReadingsMap(); //Do not use GetLongReadingsMap, doesn't work and reads nothing
+        m_pcDistance->GetReadingsMap(); // Do not use GetLongReadingsMap,
+                                        // doesn't work and reads nothing
 
     auto iterDistRead = sDistRead.begin();
 
@@ -323,12 +339,12 @@ void CMainSimulation::GetDistanceReadings()
         m_distance.left = (iterDistRead++)->second;
         m_distance.back = (iterDistRead++)->second;
         m_distance.right = (iterDistRead++)->second;
-    } 
-    else 
-    {
-        LOG << "There is a problem with the distance scanners" << "Size: " << sDistRead.size() << std::endl;
     }
-
+    else
+    {
+        LOG << "There is a problem with the distance scanners"
+            << "Size: " << sDistRead.size() << std::endl;
+    }
 }
 
 /// @brief Determine if the drone should change direction
@@ -350,15 +366,18 @@ bool CMainSimulation::ShouldChangeDirection()
 /// @brief Reset the drone
 void CMainSimulation::Reset()
 {
-
-    //Reset rng seed
-    m_pcRNG->SetSeed(std::time(0) + stoi(GetId().substr(GetId().length() - 1))); // Drone ID is taken into account so both drones have different rng
+    // Reset rng seed
+    m_pcRNG->SetSeed(
+        std::time(0) +
+        stoi(GetId().substr(
+            GetId().length() - 1))); // Drone ID is taken into account so both
+                                     // drones have different rng
     m_pcRNG->Reset();
 
     m_uiCurrentStep = 0;
-    //m_currentAction = Action::Start; // Comment when doing merge request
+    // m_currentAction = Action::Start; // Comment when doing merge request
     m_currentAction = Action::None; // Comment when testing without backend
-    m_actionTime    = 5;
+    m_actionTime = 5;
     m_distance = SensorDistance();
     m_distanceThreshold = 20.0f;
 }
@@ -374,7 +393,7 @@ void CMainSimulation::HandleAction()
     if (m_actionTime <= 0 && m_server.GetNextCommand(&command))
     {
         m_currentAction = command.action;
-        m_actionTime    = 5;
+        m_actionTime = 5;
     }
 }
 

@@ -6,8 +6,14 @@
 /// @param queue_metric Metric queue
 /// @param distance_queue Distances queue
 /// @param queue_log Logs queue
-ServiceImplementation::ServiceImplementation(std::mutex& mutex, std::queue<Command>& command_queue, std::queue<bool>& done_queue, std::queue<Metric>& queue_metric,  std::queue<DistanceReadings>& queue_distance, std::queue<LogData>& queue_log)
-    : m_queue_mutex(mutex), m_queue_command(command_queue), m_queue_done(done_queue), m_queue_metric(queue_metric), m_queue_distance(queue_distance), m_queue_log(queue_log)
+ServiceImplementation::ServiceImplementation(
+    std::mutex& mutex, std::queue<Command>& command_queue,
+    std::queue<bool>& done_queue, std::queue<Metric>& queue_metric,
+    std::queue<DistanceReadings>& queue_distance,
+    std::queue<LogData>& queue_log)
+    : m_queue_mutex(mutex), m_queue_command(command_queue),
+      m_queue_done(done_queue), m_queue_metric(queue_metric),
+      m_queue_distance(queue_distance), m_queue_log(queue_log)
 {
 }
 
@@ -20,7 +26,7 @@ Status ServiceImplementation::StartMission(
     ServerContext* context, const MissionRequest* request, MissionReply* reply)
 {
     Command command = {request->uri(), Action::Start};
-    
+
     m_queue_mutex.lock();
     m_queue_command.push(command);
     m_queue_mutex.unlock();
@@ -64,12 +70,12 @@ Status ServiceImplementation::ReturnToBase(
 
     bool inProgress = true;
     const int WAIT_INTERVAL = 1000;
-    while(inProgress)
+    while (inProgress)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_INTERVAL));
         m_queue_mutex.lock();
-        
-        if(!m_queue_done.empty())
+
+        if (!m_queue_done.empty())
         {
             m_queue_done.pop();
             inProgress = false;
@@ -87,9 +93,12 @@ Status ServiceImplementation::ReturnToBase(
 /// @param request Request from the server
 /// @param reply Reply to the server
 /// @return Status of the request
-Status ServiceImplementation::GetTelemetrics(ServerContext* context, const MissionRequest* request, TelemetricsReply* reply)
+Status ServiceImplementation::GetTelemetrics(
+    ServerContext* context, const MissionRequest* request,
+    TelemetricsReply* reply)
 {
-    if (m_queue_metric.empty()){
+    if (m_queue_metric.empty())
+    {
         return Status::OK;
     }
 
@@ -101,7 +110,6 @@ Status ServiceImplementation::GetTelemetrics(ServerContext* context, const Missi
         Position position = metric.position;
         int status = metric.status;
 
-        
         Telemetric* telemetric = reply->add_telemetric();
         simulation::Position* rpc_position = new simulation::Position();
 
@@ -116,7 +124,7 @@ Status ServiceImplementation::GetTelemetrics(ServerContext* context, const Missi
     }
 
     m_queue_mutex.unlock();
-    
+
     return Status::OK;
 }
 
@@ -125,12 +133,15 @@ Status ServiceImplementation::GetTelemetrics(ServerContext* context, const Missi
 /// @param request Request from the server
 /// @param reply Reply to the server
 /// @return Status of the request
-Status ServiceImplementation::GetDistances(ServerContext* context, const MissionRequest* request, DistancesReply* reply)
+Status ServiceImplementation::GetDistances(
+    ServerContext* context, const MissionRequest* request,
+    DistancesReply* reply)
 {
-    if (m_queue_distance.empty()){
+    if (m_queue_distance.empty())
+    {
         return Status::OK;
     }
-    
+
     m_queue_mutex.lock();
 
     while (!m_queue_distance.empty())
@@ -156,7 +167,7 @@ Status ServiceImplementation::GetDistances(ServerContext* context, const Mission
     }
 
     m_queue_mutex.unlock();
-    
+
     return Status::OK;
 }
 
@@ -165,12 +176,14 @@ Status ServiceImplementation::GetDistances(ServerContext* context, const Mission
 /// @param request Request from the server
 /// @param reply Reply to the server
 /// @return Status of the request
-Status ServiceImplementation::GetLogs(ServerContext* context, const MissionRequest* request, LogReply* reply)
+Status ServiceImplementation::GetLogs(
+    ServerContext* context, const MissionRequest* request, LogReply* reply)
 {
-    if (m_queue_log.empty()){
+    if (m_queue_log.empty())
+    {
         return Status::OK;
     }
-    
+
     m_queue_mutex.lock();
 
     while (!m_queue_log.empty())
@@ -186,6 +199,6 @@ Status ServiceImplementation::GetLogs(ServerContext* context, const MissionReque
     }
 
     m_queue_mutex.unlock();
-    
+
     return Status::OK;
 }

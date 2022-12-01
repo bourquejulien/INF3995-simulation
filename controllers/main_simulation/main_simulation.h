@@ -32,28 +32,22 @@
 #include <argos3/core/utility/math/rng.h>
 
 #include <communication/server.h>
-#include <struct/position.h>
 #include <struct/distance_reading.h>
+#include <struct/position.h>
 
-struct SensorDistance{
-  float front;
-  float back;
-  float left;
-  float right;
+struct SensorDistance
+{
+    float front;
+    float back;
+    float left;
+    float right;
 
-SensorDistance():
-    front(-1.0),
-    back(-1.0),
-    left(-1.0),
-    right(-1.0)
-   {}
+    SensorDistance() : front(-1.0), back(-1.0), left(-1.0), right(-1.0) {}
 
-  SensorDistance(float front, float back, float left, float right):
-    front(front),
-    back(back),
-    left(left),
-    right(right)
-   {}
+    SensorDistance(float front, float back, float left, float right)
+        : front(front), back(back), left(left), right(right)
+    {
+    }
 };
 
 /*
@@ -118,7 +112,7 @@ public:
 
     /**
      * This function set the position in server
-     */ 
+     */
     void SendPosition(Position& position);
 
     /*
@@ -142,7 +136,8 @@ public:
     void GetDistanceReadings();
 
     /*
-     * This function determines wether the direction should be changed when close to walls
+     * This function determines wether the direction should be changed when
+     * close to walls
      */
     bool ShouldChangeDirection();
 

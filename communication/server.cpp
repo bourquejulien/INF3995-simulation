@@ -1,7 +1,10 @@
 #include "server.h"
 
 /// @brief Constructor of the SimulationServer
-SimulationServer::SimulationServer() : m_service(m_queue_mutex, m_queue_command, m_queue_done, m_queue_metric, m_queue_distance, m_queue_log)
+SimulationServer::SimulationServer()
+    : m_service(
+          m_queue_mutex, m_queue_command, m_queue_done, m_queue_metric,
+          m_queue_distance, m_queue_log)
 {
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();

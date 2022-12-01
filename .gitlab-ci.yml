@@ -18,7 +18,7 @@ build:
 
 lint:
     stage: lint
-    allow_failure: true
+    allow_failure: false
     only:
         refs:
             - merge_requests
