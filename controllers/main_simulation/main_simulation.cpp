@@ -139,7 +139,6 @@ void CMainSimulation::ControlStep()
         << m_moveAngle.GetValue() * CRadians::RADIANS_TO_DEGREES << std::endl;
 
     // Print current battery level
-    //const CCI_BatterySensor::SReading& sBatRead = m_pcBattery->GetReading();
     LOG << "Battery level: " << batteryLevel << std::endl;
     LOG << "Current state: " << toUnderlyingType(m_currentAction) << std::endl;
 
