@@ -87,8 +87,10 @@ void CMainSimulation::ControlStep()
 
     m_server.UpdateTelemetrics(getCurrentMetric());
 
+    argos::Real batteryLevel = m_pcBattery->GetReading().AvailableCharge;
+
     // Takeoff
-    if (m_currentAction == Action::Start)
+    if (m_currentAction == Action::Start && batteryLevel >= 0.3f)
     {
         if (!TakeOff())
         {
@@ -104,6 +106,10 @@ void CMainSimulation::ControlStep()
     if (m_currentAction == Action::Move)
     {
         Move();
+        if (batteryLevel < 0.3f)
+        {
+            m_currentAction = Action::Return;
+        }
     }
 
     if (m_currentAction == Action::Stop)
@@ -133,8 +139,8 @@ void CMainSimulation::ControlStep()
         << m_moveAngle.GetValue() * CRadians::RADIANS_TO_DEGREES << std::endl;
 
     // Print current battery level
-    const CCI_BatterySensor::SReading& sBatRead = m_pcBattery->GetReading();
-    LOG << "Battery level: " << sBatRead.AvailableCharge << std::endl;
+    //const CCI_BatterySensor::SReading& sBatRead = m_pcBattery->GetReading();
+    LOG << "Battery level: " << batteryLevel << std::endl;
     LOG << "Current state: " << toUnderlyingType(m_currentAction) << std::endl;
 
     // Print distances
@@ -184,7 +190,7 @@ bool CMainSimulation::Return()
 
     CVector2 zeroVector = CVector2();
     bool isAtBaseLocation =
-        (cPos - m_cInitialPosition).ProjectOntoXY(zeroVector).Length() < 0.1f;
+        (cPos - m_cInitialPosition).ProjectOntoXY(zeroVector).Length() < 0.5f;
     if (isAtBaseLocation)
     {
         LOG << "ID = " << GetId() << " - "
