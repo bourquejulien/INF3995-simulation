@@ -145,7 +145,7 @@ public:
 
     Position getCurrentPosition();
 
-    Metric getCurrentMetric();
+    Metric getCurrentMetric(float batteryLevel);
 
 private:
     int m_actionTime;
