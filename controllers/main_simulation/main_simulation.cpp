@@ -416,7 +416,6 @@ Position CMainSimulation::getCurrentPosition()
 Metric CMainSimulation::getCurrentMetric(float batteryLevel)
 {
     Position position = getCurrentPosition();
-    LOG << "Battery level (metric): " << batteryLevel * 100.0f << std::endl;
     return Metric(toUnderlyingType(m_currentAction), position, batteryLevel * 100.0f); //Multiply battery by 100 to get percentage
 }
 
