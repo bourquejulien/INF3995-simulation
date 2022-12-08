@@ -27,6 +27,7 @@ message Position {
 message Telemetric {
   int32 status = 1;
   Position position = 2;
+  float battery_level = 3;
 }
 
 message DistanceObstacle {

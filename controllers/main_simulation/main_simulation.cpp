@@ -85,9 +85,9 @@ void CMainSimulation::ControlStep()
 {
     HandleAction(); // Comment to test takeoff without backend
 
-    m_server.UpdateTelemetrics(getCurrentMetric());
-
     argos::Real batteryLevel = m_pcBattery->GetReading().AvailableCharge;
+
+    m_server.UpdateTelemetrics(getCurrentMetric(batteryLevel));
 
     // Takeoff
     if (m_currentAction == Action::Start && batteryLevel >= 0.3f)
@@ -412,10 +412,12 @@ Position CMainSimulation::getCurrentPosition()
 
 /// @brief Get the current status of the drone
 /// @return Status of the drone (metric)
-Metric CMainSimulation::getCurrentMetric()
+Metric CMainSimulation::getCurrentMetric(float batteryLevel)
 {
     Position position = getCurrentPosition();
-    return Metric(toUnderlyingType(m_currentAction), position);
+    return Metric(
+        toUnderlyingType(m_currentAction), position,
+        batteryLevel * 100.0f); // Multiply battery by 100 to get percentage
 }
 
 /*

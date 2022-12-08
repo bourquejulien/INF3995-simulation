@@ -119,6 +119,7 @@ Status ServiceImplementation::GetTelemetrics(
 
         telemetric->set_status(status);
         telemetric->set_allocated_position(rpc_position);
+        telemetric->set_battery_level(metric.battery_level);
 
         m_queue_metric.pop();
     }
